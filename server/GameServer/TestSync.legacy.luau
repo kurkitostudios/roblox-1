@@ -1,1 +1,1 @@
-print("Hello world!")
+print("Cursor Cloud e Roblox Studio collegati!")
