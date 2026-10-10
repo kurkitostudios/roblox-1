@@ -93,6 +93,7 @@ local function applyHumanoid(player, fullHeal)
 		humanoid.Health = math.min(humanoid.Health, stats.maxHp)
 	end
 	player:SetAttribute("KurkitoHero", data.selectedHero)
+	character:SetAttribute("KurkitoHero", data.selectedHero)
 	local appearance = require(script.Parent.HeroAppearance)
 	appearance.Apply(character, data.selectedHero, data.heroes[data.selectedHero], data)
 end

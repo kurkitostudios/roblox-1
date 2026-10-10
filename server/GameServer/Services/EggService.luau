@@ -81,7 +81,7 @@ function EggService.InspectRobux(player, specialIndex)
 		return { ok = false, error = "Invalid showcase." }
 	end
 	local position = WorldLayout.FindSpecialEgg(specialIndex)
-	if position and not HeroService.Near(player, position, WorldLayout.Radii.Egg) and not HeroService.InLobby(player) then
+	if not position or not HeroService.Near(player, position, WorldLayout.Radii.Egg) then
 		return { ok = false, error = "Move closer to the showcase." }
 	end
 	Notifier.Send(player, "info", egg.name .. " cannot be purchased. No Product ID is configured. Odds are on the sign.")
@@ -90,6 +90,25 @@ function EggService.InspectRobux(player, specialIndex)
 		error = "Robux purchases are disabled in this build.",
 		odds = oddsText(egg.pool),
 	}
+end
+
+function EggService.OpenBest(player)
+	local data = PlayerData.Get(player)
+	if not data or data.selectedHero == "" then
+		return { ok = false, error = "Select a hero." }
+	end
+	local hero = data.heroes[data.selectedHero]
+	local best = nil
+	for index = 15, 2, -1 do
+		if hero.unlockedArenas[tostring(index)] then
+			best = index
+			break
+		end
+	end
+	if not best then
+		return { ok = false, error = Strings.Error.AdvancedEggLocked }
+	end
+	return EggService.OpenArena(player, best)
 end
 
 function EggService.Bind(ctx)

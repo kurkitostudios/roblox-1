@@ -12,6 +12,7 @@ local WorldLayout = shared("WorldLayout")
 local GameConfig = shared("GameConfig")
 local WorldTextConfig = shared("WorldTextConfig")
 local CreatureKit = require(script.Parent.CreatureKit)
+local CombatFx = require(script.Parent.CombatFx)
 
 local EnemyService = {}
 
@@ -62,9 +63,14 @@ local function spawnDamagePopup(position, amount)
 	label.Size = UDim2.fromScale(1, 1)
 	label.Font = Enum.Font.GothamBold
 	label.TextScaled = true
-	label.TextColor3 = Color3.fromRGB(255, 228, 150)
-	label.TextStrokeTransparency = 0.35
+	label.TextColor3 = amount >= 40 and Color3.fromRGB(255, 196, 96) or Color3.fromRGB(255, 236, 214)
+	label.TextStrokeColor3 = Color3.fromRGB(48, 28, 16)
+	label.TextStrokeTransparency = 0.2
 	label.Text = tostring(amount)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(48, 28, 16)
+	stroke.Thickness = 1.4
+	stroke.Parent = label
 	label.Parent = billboard
 	TweenService:Create(popup, TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Position = popup.Position + Vector3.new(0, 2.1, 0),
@@ -125,6 +131,9 @@ function EnemyService.Start(context)
 				stateSince = os.clock(),
 				leashStartedAt = nil,
 				lastAttack = 0,
+				nextAttack = 0,
+				attackIndex = 0,
+				pending = nil,
 				damageByUserId = {},
 				lastHitUserId = nil,
 				rewarded = false,
@@ -275,6 +284,9 @@ function EnemyService.Respawn(enemy)
 	enemy.root = root
 	enemy.align = align
 	enemy.rewarded = false
+	enemy.pending = nil
+	enemy.attackIndex = 0
+	enemy.nextAttack = 0
 	enemy.damageByUserId = {}
 	enemy.lastHitUserId = nil
 	enemy.target = nil
@@ -327,12 +339,137 @@ function EnemyService.Damage(enemy, player, amount)
 	enemy.lastHitUserId = player.UserId
 	enemy.humanoid.Health -= amount
 	if enemy.model then
-		enemy.model:SetAttribute("KurkitoHitAt", os.clock())
+		enemy.model:SetAttribute("KurkitoHitAt", workspace:GetServerTimeNow())
 	end
 	spawnDamagePopup(enemy.root.Position, amount)
 	if enemy.humanoid.Health <= 0 then
 		EnemyService.Kill(enemy)
 	end
+end
+
+local function windupFor(move)
+	if move == "smash" or move == "slam" then
+		return 0.42
+	elseif move == "roar" or move == "summon" then
+		return 0.4
+	elseif move == "bash" or move == "charge" then
+		return 0.28
+	elseif move == "leap" then
+		return 0.22
+	elseif move == "claw" then
+		return 0.14
+	end
+	return 0.16
+end
+
+local function cooldownFor(enemy, move)
+	local base = enemy.def.interval
+	if move == "smash" then
+		return base * 1.35
+	elseif move == "bash" then
+		return base * 1.1
+	elseif move == "claw" then
+		return 0.4
+	elseif move == "recover" then
+		return 1.05
+	elseif move == "roar" or move == "summon" then
+		return 1.9
+	elseif move == "slam" or move == "charge" then
+		return 1.55
+	elseif move == "leap" then
+		return base * 0.95
+	end
+	return base
+end
+
+local function damageFor(enemy, move)
+	local amount = enemy.def.dmg
+	if move == "recover" then
+		return 0
+	elseif move == "smash" then
+		return amount * 1.35
+	elseif move == "slam" then
+		return amount * 1.45
+	elseif move == "charge" then
+		return amount * 1.25
+	elseif move == "claw" then
+		if (enemy.attackIndex or 1) % 4 == 3 then
+			return amount * 1.15
+		end
+		return amount * 0.7
+	elseif move == "roar" then
+		return amount * 0.5
+	elseif move == "summon" then
+		return amount * 0.35
+	elseif move == "leap" then
+		return amount * 1.05
+	end
+	return amount
+end
+
+local function chooseMove(enemy)
+	enemy.attackIndex = (enemy.attackIndex or 0) + 1
+	local behavior = enemy.def.behavior
+	local index = enemy.attackIndex
+	if behavior == "scavenger" then
+		return index % 3 == 0 and "leap" or "swipe"
+	elseif behavior == "bonewalker" then
+		return index % 2 == 0 and "smash" or "bash"
+	elseif behavior == "rotfang" then
+		if (index - 1) % 4 == 3 then
+			return "recover"
+		end
+		return "claw"
+	elseif behavior == "chieftain" then
+		local cycle = { "roar", "slam", "summon", "charge" }
+		return cycle[((index - 1) % #cycle) + 1]
+	end
+	return "swipe"
+end
+
+local function dashToward(enemy, targetPosition, distance)
+	local flat = Vector3.new(targetPosition.X - enemy.root.Position.X, 0, targetPosition.Z - enemy.root.Position.Z)
+	if flat.Magnitude < 2 then
+		return
+	end
+	local step = math.min(distance, flat.Magnitude - 1.5)
+	local dest = enemy.root.Position + flat.Unit * step
+	enemy.root.CFrame = CFrame.new(dest, dest + flat)
+end
+
+local function strikeColor(enemy)
+	local behavior = enemy.def.behavior
+	if behavior == "bonewalker" then
+		return Color3.fromRGB(230, 186, 120)
+	elseif behavior == "chieftain" then
+		return Color3.fromRGB(255, 96, 42)
+	end
+	return Color3.fromRGB(130, 255, 120)
+end
+
+local function chaseProfile(enemy, distance)
+	local speed = enemy.def.speed
+	local move = ""
+	local behavior = enemy.def.behavior
+	if behavior == "scavenger" then
+		speed *= 1.12
+		move = "run"
+	elseif behavior == "bonewalker" then
+		speed *= 0.76
+		move = "march"
+	elseif behavior == "rotfang" then
+		if distance > 16 then
+			speed *= 0.68
+			move = "stalk"
+		else
+			speed *= 1.35
+			move = "lunge"
+		end
+	elseif behavior == "chieftain" then
+		speed *= 0.9
+		move = "march"
+	end
+	return speed, move
 end
 
 function EnemyService.Tick(_dt)
@@ -398,20 +535,61 @@ function EnemyService.Tick(_dt)
 					else
 						local distance = (targetRoot.Position - enemy.root.Position).Magnitude
 						faceTarget(enemy, targetRoot.Position)
-						if distance <= enemy.def.range then
+						local reach = enemy.def.range + (enemy.def.behavior == "bonewalker" and 0.8 or 0)
+						if distance <= reach or enemy.pending then
 							setState(enemy, "Attacking")
 							enemy.humanoid.WalkSpeed = 0
 							enemy.stuck = 0
-							if now - enemy.lastAttack >= enemy.def.interval then
-								enemy.lastAttack = now
-								enemy.model:SetAttribute("KurkitoSwing", now)
-								if ctx and ctx.services.CombatService then
-									ctx.services.CombatService.DamagePlayer(enemy.target, enemy.def.dmg)
+							if enemy.pending then
+								if distance > reach + 8 then
+									enemy.pending = nil
+								elseif now >= (enemy.windupUntil or 0) then
+									local move = enemy.pending
+									enemy.pending = nil
+									enemy.lastAttack = now
+									enemy.nextAttack = now + cooldownFor(enemy, move)
+									local amount = damageFor(enemy, move)
+									CombatFx.Strike(move, enemy.root.Position, targetRoot.Position, strikeColor(enemy))
+									local extra = 2
+									if move == "roar" or move == "slam" or move == "leap" or move == "charge" then
+										extra = 6
+									end
+									if amount > 0 and (targetRoot.Position - enemy.root.Position).Magnitude <= enemy.def.range + extra then
+										if ctx and ctx.services.CombatService then
+											ctx.services.CombatService.DamagePlayer(enemy.target, amount)
+										end
+									end
+								end
+							elseif now >= (enemy.nextAttack or 0) then
+								if enemy.def.behavior then
+									local move = chooseMove(enemy)
+									enemy.pending = move
+									enemy.windupUntil = now + windupFor(move)
+									enemy.model:SetAttribute("KurkitoMove", move)
+									enemy.model:SetAttribute("KurkitoSwing", workspace:GetServerTimeNow())
+									if move == "leap" then
+										dashToward(enemy, targetRoot.Position, 10)
+									elseif move == "charge" then
+										dashToward(enemy, targetRoot.Position, 14)
+									end
+								elseif now - enemy.lastAttack >= enemy.def.interval then
+									enemy.lastAttack = now
+									enemy.nextAttack = now + enemy.def.interval
+									enemy.model:SetAttribute("KurkitoMove", "swipe")
+									enemy.model:SetAttribute("KurkitoSwing", workspace:GetServerTimeNow())
+									CombatFx.Strike("swipe", enemy.root.Position, targetRoot.Position, Color3.fromRGB(255, 220, 180))
+									if ctx and ctx.services.CombatService then
+										ctx.services.CombatService.DamagePlayer(enemy.target, enemy.def.dmg)
+									end
 								end
 							end
 						else
 							setState(enemy, "Chasing")
-							enemy.humanoid.WalkSpeed = enemy.def.speed
+							local speed, move = chaseProfile(enemy, distance)
+							enemy.humanoid.WalkSpeed = speed
+							if enemy.model then
+								enemy.model:SetAttribute("KurkitoMove", move)
+							end
 							local previous = enemy.previousGap
 							if previous and distance > previous - 0.35 then
 								enemy.stuck = (enemy.stuck or 0) + 0.2

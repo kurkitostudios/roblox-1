@@ -24,6 +24,7 @@ local uiFolder = script.Parent:WaitForChild("UI")
 local HUD = require(uiFolder:WaitForChild("HUD"))
 local HeroSelect = require(uiFolder:WaitForChild("HeroSelect"))
 local Menus = require(uiFolder:WaitForChild("Menus"))
+local Merchant = require(uiFolder:WaitForChild("Merchant"))
 local Notifications = require(uiFolder:WaitForChild("Notifications"))
 local WorldText = require(script.Parent:WaitForChild("WorldText"))
 local Motion = require(script.Parent:WaitForChild("Motion"))
@@ -82,11 +83,15 @@ HeroSelect.Mount(gui, invoke, notify)
 Menus.Mount(gui, invoke, notify, function()
 	return state.profile
 end)
+Merchant.Mount(gui, invoke, notify, function()
+	return state.profile
+end)
 
 local function refresh()
 	HUD.Update(state.profile, state.vitals)
 	HeroSelect.Update(state.profile, state.ready, state.errorText)
 	Menus.Update()
+	Merchant.Update()
 end
 
 remotes:WaitForChild("ProfileSync").OnClientEvent:Connect(function(payload)
@@ -105,6 +110,10 @@ remotes:WaitForChild("Notification").OnClientEvent:Connect(function(payload)
 	end
 end)
 
+remotes:WaitForChild("OpenMerchant").OnClientEvent:Connect(function()
+	Merchant.Open()
+end)
+
 remotes:WaitForChild("Vitals").OnClientEvent:Connect(function(payload)
 	if type(payload) ~= "table" then
 		return
@@ -116,4 +125,4 @@ end)
 WorldText.Start()
 Motion.Start()
 refresh()
-print("[Kurkito] Client Build 002 ready.")
+print("[Kurkito] Client Build 003 ready.")

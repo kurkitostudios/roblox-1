@@ -4,7 +4,7 @@
 local QuestConfig = {
 	{
 		id = "prova_del_ferro",
-		name = "Trial of Iron",
+		name = "First Hunt",
 		description = "Defeat 10 enemies. Unlocks the next hero.",
 		metric = "kills",
 		goal = 10,

@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 
 local shared = require(script.Parent.SharedLoader)
 local GameConfig = shared("GameConfig")
+local WorldLayout = shared("WorldLayout")
 local HeroConfig = shared("HeroConfig")
 local Rules = shared("Rules")
 local PlayerData = require(script.Parent.PlayerDataService)
@@ -21,11 +22,7 @@ local ready = false
 local lastSent = {}
 local refreshing = false
 
-local BOARDS = {
-	{ id = "Rebirth", title = "MOST REBIRTH" },
-	{ id = "Time", title = "MOST TIME PLAYED" },
-	{ id = "Kills", title = "MOST KILLS" },
-}
+local BOARDS = WorldLayout.LeaderboardBoards()
 
 local function boardNames()
 	if RunService:IsStudio() then
@@ -44,6 +41,8 @@ local function valueOf(player, boardId)
 	elseif boardId == "Time" then
 		local runtime = RuntimeState.Get(player)
 		return data.playTimeSeconds + math.floor(runtime.playtimeBuffer)
+	elseif boardId == "Coins" then
+		return data.coins
 	end
 	return data.totalKills
 end
@@ -204,6 +203,50 @@ local function placeDummy(figures, podium, userId, snapshot)
 	return top
 end
 
+local function placeTribal(figures, podium, place)
+	local model = Instance.new("Model")
+	model.Name = "TribalDisplay_" .. tostring(place)
+	model.Parent = figures
+	local top = podium.Position + Vector3.new(0, podium.Size.Y / 2, 0)
+	local hide = place == 1 and Color3.fromRGB(138, 78, 42) or Color3.fromRGB(96, 64, 40)
+	local bone = Color3.fromRGB(214, 196, 164)
+	local skin = Color3.fromRGB(190, 142, 102)
+	local function part(name, size, offset, color, material, shape)
+		local piece = Instance.new("Part")
+		piece.Name = name
+		piece.Size = size
+		piece.Anchored = true
+		piece.CanCollide = false
+		piece.CanQuery = false
+		piece.CanTouch = false
+		piece.Color = color
+		piece.Material = material or Enum.Material.Fabric
+		piece.CFrame = CFrame.new(top + offset)
+		if shape then
+			piece.Shape = shape
+		end
+		piece.Parent = model
+		return piece
+	end
+	part("Legs", Vector3.new(1.05, 1.5, 0.55), Vector3.new(0, 0.85, 0), hide, Enum.Material.Fabric)
+	part("Torso", Vector3.new(1.35, 1.35, 0.75), Vector3.new(0, 2.15, 0), hide, Enum.Material.Fabric)
+	part("Head", Vector3.new(0.85, 0.85, 0.85), Vector3.new(0, 3.15, 0), skin, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+	part("Hair", Vector3.new(0.9, 0.35, 0.9), Vector3.new(0, 3.5, 0.05), Color3.fromRGB(28, 18, 14), Enum.Material.Fabric)
+	part("Club", Vector3.new(0.22, 2.2, 0.22), Vector3.new(0.7, 2.3, -0.2), Color3.fromRGB(86, 56, 34), Enum.Material.Wood)
+	part("Bone", Vector3.new(0.45, 0.2, 0.45), Vector3.new(-0.55, 2.7, 0), bone, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+	return model
+end
+
+local function setRankings(boardId, text)
+	local world = workspace:FindFirstChild("KurkitoWorld")
+	local board = world and world:FindFirstChild("Board_" .. boardId, true)
+	local gui = board and board:FindFirstChild("BoardGui")
+	local label = gui and gui:FindFirstChild("Rankings")
+	if label then
+		label.Text = text
+	end
+end
+
 function LeaderboardService.RefreshPodiums()
 	if refreshing then
 		return
@@ -225,12 +268,16 @@ function LeaderboardService.RefreshPodiums()
 				end
 			end
 		end
+		local lines = {}
 		for place = 1, 3 do
 			local podium = podiumPart(board.id, place)
 			if podium then
 				local row = entries and entries[place]
 				if not row then
 					setLabel(podium, "—", ready and "" or "Data unavailable")
+					if figures then
+						placeTribal(figures, podium, place)
+					end
 				else
 					local userId = tonumber(row.key)
 					local name = "Player " .. tostring(row.key)
@@ -239,7 +286,10 @@ function LeaderboardService.RefreshPodiums()
 							name = Players:GetNameFromUserIdAsync(userId)
 						end)
 					end
-					setLabel(podium, "#" .. place .. " " .. name, formatValue(board.id, row.value))
+					local valueText = formatValue(board.id, row.value)
+					setLabel(podium, "#" .. place .. " " .. name, valueText)
+					table.insert(lines, string.format("%d. %s   %s", place, name, valueText))
+					local placed = false
 					if figures and userId then
 						local snapshot = nil
 						if publicStore then
@@ -247,12 +297,29 @@ function LeaderboardService.RefreshPodiums()
 								snapshot = publicStore:GetAsync(tostring(userId))
 							end)
 						end
-						pcall(function()
+						local ok = pcall(function()
 							placeDummy(figures, podium, userId, snapshot)
 						end)
+						placed = ok
+					end
+					if figures and not placed then
+						placeTribal(figures, podium, place)
 					end
 				end
 			end
+		end
+		if entries then
+			for place = 4, math.min(8, #entries) do
+				local row = entries[place]
+				if row then
+					table.insert(lines, string.format("%d. Player %s   %s", place, tostring(row.key), formatValue(board.id, row.value)))
+				end
+			end
+		end
+		if #lines == 0 then
+			setRankings(board.id, ready and "No records yet" or "Data unavailable")
+		else
+			setRankings(board.id, table.concat(lines, "\n"))
 		end
 	end
 	refreshing = false

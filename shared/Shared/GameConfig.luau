@@ -1,10 +1,10 @@
--- Kurkito Studios — Build 002
+-- Kurkito Studios — Build 003
 -- Configurazione globale. I valori di bilanciamento sono PROVVISORI.
 
 local GameConfig = {
 	BuildName = "Kurkito Battle Survival",
-	BuildVersion = "002",
-	WorldBuildId = "world1-build002",
+	BuildVersion = "003",
+	WorldBuildId = "world0-build003",
 
 	-- Loop AI e combattimento. Non usare un controllo per frame.
 	TickInterval = 0.2,
@@ -55,11 +55,13 @@ local GameConfig = {
 			Rebirth = "Kurkito_LB_Rebirth_v1",
 			Time = "Kurkito_LB_Time_v1",
 			Kills = "Kurkito_LB_Kills_v1",
+			Coins = "Kurkito_LB_Coins_v1",
 		},
 		StudioBoards = {
 			Rebirth = "Kurkito_Studio_LB_Rebirth_v1",
 			Time = "Kurkito_Studio_LB_Time_v1",
 			Kills = "Kurkito_Studio_LB_Kills_v1",
+			Coins = "Kurkito_Studio_LB_Coins_v1",
 		},
 		LockSeconds = 120,
 		LoadRetries = 4,
@@ -77,6 +79,7 @@ local GameConfig = {
 		Teleport = 5,
 		Rebirth = 3,
 		OpenEgg = 5,
+		SellLoot = 8,
 		FusePets = 4,
 		UsePotion = 6,
 		EquipPet = 8,

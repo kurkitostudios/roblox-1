@@ -144,7 +144,7 @@ local specials = {
 	{
 		id = "egg_robux_1",
 		kind = "robux",
-		name = "Royal Egg I",
+		name = "Premium Egg",
 		terrace = 1,
 		arenas = "1–5",
 		cost = nil,

@@ -19,12 +19,14 @@ local RemoteNames = {
 		"UnequipPet",
 		"EquipItem",
 		"UnequipItem",
+		"SellLoot",
 	},
 
 	Events = {
 		"ProfileSync",
 		"Notification",
 		"Vitals",
+		"OpenMerchant",
 	},
 }
 

@@ -1,4 +1,4 @@
-# Test — Build 002
+# Test — Build 003
 
 Questa macchina non ha Roblox Studio. I controlli sotto sono statici o eseguono solo la logica pura. Non sono un playtest.
 
@@ -15,35 +15,38 @@ Questa macchina non ha Roblox Studio. I controlli sotto sono statici o eseguono 
    - Il tetto di drop (0,85) blocca un raro anche con fortuna enorme. Un drop con probabilità base 1 resta garantito. Il filtro di classe scarta gli oggetti delle altre classi.
    - Una pozione della stessa famiglia sostituisce durata e potenza, non le somma.
    - Il credito dell'uccisione segue danno maggiore, con parità all'ultimo colpo.
-3. **Moduli condivisi.** `python3 tests/check_structure.py` stampa anche il numero di moduli in `shared/Shared/`. La Build 002 aggiunge `Strings`, `WorldTextConfig` e `PropKit`. Non esiste più un harness che carichi i moduli in un ambiente finto: quel controllo non è nel repository.
-4. **Struttura Script Sync.** `python3 tests/check_structure.py` deve stampare `STRUCTURE_OK`.
+3. **Struttura Script Sync.** `python3 tests/check_structure.py` deve stampare `STRUCTURE_OK`.
    - Nessun `init.luau` nelle radici sincronizzate.
    - `TestSync.legacy.luau` invariato.
    - I `require` di fratello e i nomi dei Remote usati da `Bind` esistono in `RemoteNames`.
+4. **Build 003.** `python3 tests/check_build003.py` deve stampare `BUILD003_OK`.
+   - `WorldBuildId` è `world0-build003` e lo schema resta 1.
+   - I DataStore del profilo e delle tre classifiche vecchie non cambiano nome. La board monete è aggiunta.
+   - `zombie` resta Scavenger con 48 HP e 7 monete. `zombie_corrotto` resta Bonewalker. Rotfang e Grave Chieftain esistono, con mosse distinte.
+   - Quattro titoli di classifica, prompt “Talk to Merchant”, pannello Tribal Merchant, niente `MarketplaceService`.
+   - Nessuna stringa italiana nei testi tra virgolette dei moduli di gioco.
 
-Per ripetere i punti 2 e 4 servono il binario `luau` e Python 3. Il punto 2 si ottiene togliendo l'ultima riga `return Rules` da `Rules.luau` e appendendo `tests/rules_cases.luau`.
+Per ripetere i punti 2 e 3 servono il binario `luau` e Python 3. Il punto 2 si ottiene togliendo l'ultima riga `return Rules` da `Rules.luau` e appendendo `tests/rules_cases.luau`.
 
 ## Non eseguito
 
 - Play in Roblox Studio.
 - DataStore reali, OrderedDataStore, avatar dei podi.
 - Combattimento, pathfinding, UI su PC o telefono.
+- Movimento reale dei nemici, collisione delle capanne, distanza visiva dei cartelli in camera.
 - Acquisti Robux. Non vanno provati: non ci sono Product ID.
 
 ## Verifica manuale in Studio
 
 Dopo i passi di [SETUP_ROBLOX_STUDIO.md](SETUP_ROBLOX_STUDIO.md):
 
-1. Output: `[Kurkito] Build 002 started. World 1, 15 arenas, automatic combat.` e `TestSync` che stampa ancora la riga di collegamento.
-2. I cartelli di un'arena lontana non si leggono. Avvicinandosi, nomi, prezzi e prompt compaiono entro le distanze di `WorldTextConfig`.
-3. HUD, menu e notifiche sono in inglese. La UI permanente resta visibile anche da lontano.
-4. La mappa compare una sola volta. Un secondo Play nello stesso server non duplica `KurkitoWorld` se il `BuildId` coincide (`world1-build002`).
-5. Scegli un eroe. La schermata non si ripresenta. Gli altri due restano bloccati. L'aspetto cambia con gli upgrade e con il cambio eroe.
-6. Entra nell'Arena 1. Entra nel cerchio rosso: il nemico insegue e l'eroe attacca da solo. Allontanandolo oltre il guinzaglio, dopo 5 secondi torna allo spawn e non si fa trascinare.
-7. XP, monete e Mastery salgono. Le monete sono le stesse se cambi eroe. La Mastery no.
-8. Uccidi 10 nemici: la missione sblocca il secondo eroe. Il cambio funziona dalla lobby.
-9. Arena 2 rifiuta l'ingresso senza Mastery 5 e senza le monete. Dopo l'acquisto l'altro eroe non ce l'ha.
-10. A Mastery 50, all'altare, Prepara e poi Conferma il Rebirth. Si azzerano Mastery, statistiche, punti, arene e l'equipaggiamento di quell'eroe. Restano monete, Pet, materiali, pozioni, collezionabili e gli altri eroi.
-11. Apri un uovo dell'arena sbloccata. Fondi 5 Pet identici non equipaggiati. Una seconda pozione della stessa famiglia sostituisce la prima.
-12. Le uova Robux e il portale del Mondo 2 dicono di non essere attivi e non aprono acquisti.
-13. Con le API DataStore spente la sessione resta in memoria. Con le API accese, il salvataggio usa solo i nomi `Kurkito_Studio_*`.
+1. Output: `[Kurkito] Build 003 started. World 0 lobby, Arena 1, automatic combat.` e `[Kurkito] World 0 built (world0-build003).` `TestSync` stampa ancora la riga di collegamento.
+2. Il mondo compare una sola volta. Un secondo Play nello stesso server non duplica `KurkitoWorld` se il `BuildId` coincide.
+3. Il lobby non è la piazza della Build 002: villaggio a sinistra, tre uova al centro-sud, mercante, viale delle classifiche a destra, arco verso l'Arena 1.
+4. I cartelli lontani non si leggono. Avvicinandosi, nomi, prezzi, classifiche e prompt compaiono entro le distanze di `WorldTextConfig`.
+5. HUD, menu, mercante, uova e notifiche sono in inglese.
+6. “Talk to Merchant” apre Tribal Merchant / Sell Loot. Senza materiali o reliquie il pannello è vuoto. Equip, pozioni e Pet non compaiono in vendita.
+7. Coin Egg apre solo l'uovo dell'Arena 1, da vicino. Advanced Coin Egg apre l'arena sbloccata più alta tra 2 e 15, oppure dice di sbloccarne un'altra. Premium Egg non compra nulla.
+8. Scegli il Warrior. L'aspetto è tribale, con clava, non con spada. Gli altri due eroi restano sbloccabili dalle missioni.
+9. Entra nell'Arena 1. I quattro tipi (tre zombie e il boss) sono presenti. Il cerchio di aggro è sottile. I comportamenti non sono identici: salto, colpo pesante, raffica, e mosse del boss.
+10. XP, monete, Mastery, Rebirth, Pet e salvataggio seguono ancora le regole della Build 001. Un Pet `zombie` già salvato resta valido.

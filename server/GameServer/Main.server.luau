@@ -1,4 +1,4 @@
--- Bootstrap Build 002. Gli altri script di GameServer, come TestSync, restano indipendenti.
+-- Bootstrap Build 003. Gli altri script di GameServer, come TestSync, restano indipendenti.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -36,6 +36,7 @@ local ArenaService = load("ArenaService")
 local InventoryService = load("InventoryService")
 local PetService = load("PetService")
 local EggService = load("EggService")
+local MerchantService = load("MerchantService")
 local FusionService = load("FusionService")
 local PotionService = load("PotionService")
 local RebirthService = load("RebirthService")
@@ -52,6 +53,7 @@ ctx.services.PlayerDataService = PlayerDataService
 ctx.services.HeroService = HeroService
 ctx.services.ArenaService = ArenaService
 ctx.services.EggService = EggService
+ctx.services.MerchantService = MerchantService
 ctx.services.RebirthService = RebirthService
 ctx.services.EnemyService = EnemyService
 ctx.services.CombatService = CombatService
@@ -73,6 +75,7 @@ ArenaService.Bind(ctx)
 InventoryService.Bind(ctx)
 PetService.Bind(ctx)
 EggService.Bind(ctx)
+MerchantService.Bind(ctx)
 FusionService.Bind(ctx)
 PotionService.Bind(ctx)
 RebirthService.Bind(ctx)
@@ -81,4 +84,4 @@ StudioCommands.Start()
 GameLoop.Start(ctx)
 PlayerDataService.HookPlayers()
 
-print("[Kurkito] Build 002 started. World 1, 15 arenas, automatic combat.")
+print("[Kurkito] Build 003 started. World 0 lobby, Arena 1, automatic combat.")

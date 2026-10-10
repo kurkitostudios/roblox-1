@@ -76,6 +76,19 @@ function PromptRouter.Start(ctx)
 					end
 				elseif action == "Portal" then
 					Notifier.Send(player, "info", "The World 2 portal is not active.")
+				elseif action == "OpenBestEgg" then
+					local result = eggs.OpenBest(player)
+					if not result.ok then
+						Notifier.Send(player, "error", result.error)
+					end
+				elseif action == "Merchant" then
+					local merchant = ctx.services.MerchantService
+					if merchant then
+						local result = merchant.Open(player)
+						if not result.ok then
+							Notifier.Send(player, "error", result.error)
+						end
+					end
 				end
 			end)
 		end

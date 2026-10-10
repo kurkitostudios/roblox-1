@@ -2,8 +2,10 @@
 -- La rarità dei mostri è distinta dalla rarità degli oggetti e dei Pet.
 
 local RAW = {
-	{ id = "zombie", name = "Zombie", arena = 1, rarity = "Common", hp = 48, dmg = 6, speed = 11, aggro = 20, leash = 58, range = 5, interval = 1.45, xp = 12, coins = 7, respawn = 6, scale = 1 },
-	{ id = "zombie_corrotto", name = "Corrupted Zombie", arena = 1, rarity = "Uncommon", hp = 78, dmg = 8, speed = 12, aggro = 22, leash = 58, range = 5, interval = 1.4, xp = 20, coins = 11, respawn = 8, scale = 1.08 },
+	{ id = "zombie", name = "Scavenger Zombie", arena = 1, rarity = "Common", hp = 48, dmg = 6, speed = 11, aggro = 20, leash = 58, range = 5, interval = 1.45, xp = 12, coins = 7, respawn = 6, scale = 1, behavior = "scavenger" },
+	{ id = "zombie_corrotto", name = "Bonewalker Zombie", arena = 1, rarity = "Uncommon", hp = 78, dmg = 8, speed = 12, aggro = 22, leash = 58, range = 5, interval = 1.4, xp = 20, coins = 11, respawn = 8, scale = 1.08, behavior = "bonewalker" },
+	{ id = "rotfang", name = "Rotfang Zombie", arena = 1, rarity = "Rare", hp = 118, dmg = 11, speed = 15, aggro = 24, leash = 60, range = 5.2, interval = 1.05, xp = 32, coins = 16, respawn = 9, scale = 1.12, behavior = "rotfang" },
+	{ id = "grave_chieftain", name = "Grave Chieftain", arena = 1, rarity = "Boss", hp = 640, dmg = 18, speed = 10, aggro = 28, leash = 70, range = 8, interval = 1.65, xp = 160, coins = 80, respawn = 30, scale = 1.7, behavior = "chieftain" },
 	{ id = "scheletro", name = "Skeleton", arena = 2, rarity = "Common", hp = 64, dmg = 7, speed = 12, aggro = 20, leash = 60, range = 5, interval = 1.4, xp = 16, coins = 9, respawn = 6, scale = 1 },
 	{ id = "scheletro_arciere", name = "Skeleton Archer", arena = 2, rarity = "Uncommon", hp = 58, dmg = 9, speed = 11, aggro = 24, leash = 62, range = 18, interval = 1.6, xp = 24, coins = 13, respawn = 8, scale = 1 },
 	{ id = "goblin", name = "Goblin", arena = 3, rarity = "Common", hp = 86, dmg = 8, speed = 13, aggro = 20, leash = 60, range = 4.5, interval = 1.25, xp = 22, coins = 13, respawn = 6, scale = 0.9 },

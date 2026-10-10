@@ -1,4 +1,4 @@
-# Setup in Roblox Studio — Build 002
+# Setup in Roblox Studio — Build 003
 
 Questo progetto si sincronizza con **Roblox Studio Script Sync**. Non usare Rojo, non installare Wally e non aggiungere un file di progetto Rojo.
 
@@ -94,6 +94,7 @@ I nomi sono diversi di proposito. Studio usa `RunService:IsStudio()`.
 | Rebirth | `Kurkito_Studio_LB_Rebirth_v1` | `Kurkito_LB_Rebirth_v1` |
 | Tempo | `Kurkito_Studio_LB_Time_v1` | `Kurkito_LB_Time_v1` |
 | Uccisioni | `Kurkito_Studio_LB_Kills_v1` | `Kurkito_LB_Kills_v1` |
+| Monete | `Kurkito_Studio_LB_Coins_v1` | `Kurkito_LB_Coins_v1` |
 | Aspetto podio | `Kurkito_Studio_Public_v1` | `Kurkito_Public_v1` |
 
 Per provare il salvataggio in Studio:

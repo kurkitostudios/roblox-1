@@ -34,6 +34,10 @@ local Strings = {
 		InvalidShowcase = "Invalid showcase.",
 		MoveCloserShowcase = "Move closer to the showcase.",
 		RobuxDisabled = "Robux purchases are disabled in this build.",
+		MoveCloserMerchant = "Move closer to the Tribal Merchant.",
+		MerchantNoBuy = "The merchant does not buy that.",
+		NothingToSell = "You do not have that loot.",
+		AdvancedEggLocked = "Unlock another arena to open the Advanced Coin Egg.",
 		FusionBusy = "Fusion is already in progress.",
 		FuseInLobby = "Fuse pets in the lobby or at the fusion altar.",
 		InvalidSelection = "Invalid selection.",
@@ -193,6 +197,22 @@ function Strings.RobuxEggSign(name, odds)
 	return name .. "\nNOT FOR SALE\nNo Product ID\n" .. odds
 end
 
+function Strings.CoinEggSign(cost, odds)
+	return "Coin Egg\n" .. Strings.Coins(cost) .. "\n" .. odds
+end
+
+function Strings.AdvancedEggSign()
+	return "Advanced Coin Egg\nHighest unlocked arena\nArenas 2–15"
+end
+
+function Strings.PremiumEggSign(odds)
+	return "Premium Egg\nNOT FOR SALE\nNo Product ID\n" .. odds
+end
+
+function Strings.SoldLoot(name, count, coins)
+	return "Sold " .. tostring(count) .. " " .. name .. " for " .. tostring(coins) .. " Coins."
+end
+
 Strings.UI = {
 	Close = "Close",
 	Loading = "Loading data...",
@@ -232,7 +252,7 @@ Strings.UI = {
 	EmptySlot = "Slot %d: empty",
 	FilledSlot = "Slot %d: %s",
 	ClearSlot = "Clear slot ",
-	NoPets = "No pets yet. Eggs are on the hill south of the lobby.",
+	NoPets = "No pets yet. The World 0 eggs stand in the center of the lobby.",
 	EquipPet = "Equip",
 	FusionRule = "5 pets with the same id and evolution become 1 of the next tier. Equipped pets cannot be fused.",
 	NoFusionPick = "No pets selected.",
@@ -253,18 +273,25 @@ Strings.UI = {
 	NotForSale = " · not for sale",
 	NoPurchase = "No purchase was made.",
 	SelectHeroTitle = "Choose your first hero",
-	SelectHeroBody = "The choice is free and permanent. Other heroes unlock through quests.",
+	SelectHeroBody = "World 0 has one hero: the Warrior, a prehistoric survivor with a heavy club. The choice is permanent. Other heroes unlock through quests.",
 	Selected = "Selected: ",
 	ConfirmHint = ". Confirm to continue.",
 	TapHero = "Tap a hero, then confirm.",
 	ConfirmChoice = "Confirm choice",
 	SelectBeforeConfirm = "Select a hero before confirming.",
 	ChoiceFailed = "Could not choose that hero.",
-	RebirthAvailable = "Available at Mastery 50, only at the east altar. Each Rebirth grants +10% XP and +10% Coins permanently for this hero.",
+	RebirthAvailable = "Available at Mastery 50, only at the tribal altar. Each Rebirth grants +10% XP and +10% Coins permanently for this hero.",
 	RebirthLost = "Reset: Mastery, XP, stats, Skill Points, talents, abilities, arenas, and equipment bound to this hero.",
 	RebirthKept = "Kept: Coins, pets, materials, potions, collectibles, unlocked heroes, other heroes, and unbound items.",
 	ArenaIntro = "Access belongs to the active hero. You need the Mastery requirement and the coin cost. World 2 has no working portal.",
-	EggIntro = "Open normal eggs beside the model after that arena is unlocked. Robux eggs are display only.",
+	EggIntro = "The Coin Egg opens Arena 1. The Advanced Coin Egg opens your highest unlocked arena from 2 to 15. The Premium Egg is display only.",
+	MerchantTitle = "Tribal Merchant",
+	MerchantSell = "Sell Loot",
+	MerchantHint = "Fragments and relics can be sold here. Gear, potions, and pets stay with you. Prices are provisional.",
+	MerchantEmpty = "No loot to sell yet. Clear arenas to collect fragments and relics.",
+	MerchantStay = "Stay near the chief.",
+	SellOne = "Sell 1",
+	SellAll = "Sell all",
 	Open = " · open",
 	LockedArena = " · arena locked",
 	Completed = "Completed",

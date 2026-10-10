@@ -1,5 +1,6 @@
--- Geometria del Mondo 1. Unica fonte per mappa, spawn e controlli di prossimità.
--- Geometrie prototipo: parti Roblox, non asset definitivi.
+-- Geometria del Mondo 0. Unica fonte per mappa, spawn e controlli di prossimità.
+-- Il rettangolo del lobby contiene villaggio, uova, mercante e classifiche.
+-- Le arene 2–15 restano sul percorso nord e non vengono ridisegnate in questa build.
 
 local WorldLayout = {}
 
@@ -10,6 +11,12 @@ WorldLayout.LobbySize = 220
 WorldLayout.WallHeight = 28
 WorldLayout.FloorThickness = 2
 
+-- Rettangolo lungo: ovest villaggio, sud uova, est classifiche, nord Arena 1.
+WorldLayout.Lobby = {
+	center = Vector3.new(0, 0, -20),
+	size = Vector3.new(640, 2, 460),
+}
+
 WorldLayout.Radii = {
 	Hero = 32,
 	Upgrade = 32,
@@ -18,6 +25,7 @@ WorldLayout.Radii = {
 	Egg = 16,
 	ArenaPad = 24,
 	Portal = 22,
+	Merchant = 16,
 }
 
 function WorldLayout.FloorTop(centerY)
@@ -50,7 +58,6 @@ function WorldLayout.ArenaIndexAt(position)
 	return nil
 end
 
--- Pad sicuro interno, vicino al cancello sud, lontano dagli spawn nemici.
 function WorldLayout.ArenaEntry(index)
 	local center = WorldLayout.ArenaCenter(index)
 	return Vector3.new(center.X, 6, center.Z - 58)
@@ -63,73 +70,75 @@ function WorldLayout.ArenaGate(index)
 end
 
 function WorldLayout.LobbySpawn()
-	return Vector3.new(0, 8, 36)
+	return Vector3.new(0, 8, 46)
 end
 
 function WorldLayout.HeroSwitch()
-	return Vector3.new(236, 4, -36)
+	return Vector3.new(-78, 4, 36)
 end
 
 function WorldLayout.Upgrades()
-	return Vector3.new(236, 4, 36)
+	return Vector3.new(42, 4, 72)
 end
 
 function WorldLayout.Rebirth()
-	return Vector3.new(340, 4, 0)
+	return Vector3.new(86, 4, 18)
 end
 
 function WorldLayout.Fusion()
-	return Vector3.new(236, 4, 118)
+	return Vector3.new(8, 4, -96)
 end
 
 function WorldLayout.Portal()
-	return Vector3.new(450, 16, 210)
+	return Vector3.new(168, 4, 172)
 end
 
-function WorldLayout.LeaderboardOrigin()
-	return Vector3.new(-280, 0, 0)
+function WorldLayout.Merchant()
+	return Vector3.new(-116, 4, -28)
 end
 
-function WorldLayout.EggTerraces()
-	return {
-		{ index = 1, position = Vector3.new(0, 0, -310), arenas = { 1, 2, 3, 4, 5 }, special = 1 },
-		{ index = 2, position = Vector3.new(0, 16, -490), arenas = { 6, 7, 8, 9, 10 }, special = 2 },
-		{ index = 3, position = Vector3.new(0, 32, -670), arenas = { 11, 12, 13, 14, 15 }, special = 3 },
-	}
+function WorldLayout.CoinEgg()
+	return Vector3.new(-36, 4, -156)
 end
 
-function WorldLayout.EggPosition(terrace, slot)
-	-- slot 1..5 uova arena, slot 6 uovo Robux.
-	local origin = terrace.position
-	local x = -80 + (slot - 1) * 32
-	return Vector3.new(origin.X + x, origin.Y + 4, origin.Z)
+function WorldLayout.AdvancedEgg()
+	return Vector3.new(0, 4, -178)
+end
+
+function WorldLayout.PremiumEgg()
+	return Vector3.new(36, 4, -156)
 end
 
 function WorldLayout.FindArenaEgg(arenaIndex)
-	for _, terrace in WorldLayout.EggTerraces() do
-		for slot, arena in ipairs(terrace.arenas) do
-			if arena == arenaIndex then
-				return WorldLayout.EggPosition(terrace, slot), terrace
-			end
-		end
+	if type(arenaIndex) ~= "number" then
+		return nil, nil
+	end
+	if arenaIndex == 1 then
+		return WorldLayout.CoinEgg(), { index = 1 }
+	end
+	if arenaIndex >= 2 and arenaIndex <= 15 then
+		return WorldLayout.AdvancedEgg(), { index = 2 }
 	end
 	return nil, nil
 end
 
 function WorldLayout.FindSpecialEgg(specialIndex)
-	local terraces = WorldLayout.EggTerraces()
-	local terrace = terraces[specialIndex]
-	if not terrace then
-		return nil
+	if type(specialIndex) ~= "number" or specialIndex < 1 or specialIndex > 3 then
+		return nil, nil
 	end
-	return WorldLayout.EggPosition(terrace, 6), terrace
+	return WorldLayout.PremiumEgg(), { special = specialIndex }
 end
 
 function WorldLayout.InLobby(position)
 	if typeof(position) ~= "Vector3" then
 		return false
 	end
-	return math.abs(position.X) <= 125 and math.abs(position.Z) <= 125 and position.Y > -8 and position.Y < 30
+	local center = WorldLayout.Lobby.center
+	local half = WorldLayout.Lobby.size * 0.5
+	return math.abs(position.X - center.X) <= half.X - 6
+		and math.abs(position.Z - center.Z) <= half.Z - 6
+		and position.Y > -8
+		and position.Y < 48
 end
 
 function WorldLayout.Near(position, target, radius)
@@ -139,13 +148,33 @@ function WorldLayout.Near(position, target, radius)
 	return (position - target).Magnitude <= radius
 end
 
-function WorldLayout.PodiumSpec(boardIndex, place)
+function WorldLayout.LeaderboardBoards()
+	return {
+		{ id = "Kills", title = "MOST KILLS" },
+		{ id = "Rebirth", title = "MOST REBIRTHS" },
+		{ id = "Time", title = "MOST TIME PLAYED" },
+		{ id = "Coins", title = "MOST COINS" },
+	}
+end
+
+function WorldLayout.LeaderboardOrigin()
+	return Vector3.new(236, 0, -16)
+end
+
+function WorldLayout.BoardAnchor(boardIndex)
 	local origin = WorldLayout.LeaderboardOrigin()
-	local heights = { 8, 5.5, 3.5 }
-	local height = heights[place]
-	local zOffset = ({ -12, 0, 12 })[place]
-	local center = Vector3.new(origin.X + (boardIndex - 2) * 52, 1 + height / 2, origin.Z + zOffset)
-	return center, Vector3.new(9, height, 9)
+	local z = origin.Z + (boardIndex - 2.5) * 80
+	return Vector3.new(origin.X, origin.Y, z)
+end
+
+function WorldLayout.PodiumSpec(boardIndex, place)
+	local anchor = WorldLayout.BoardAnchor(boardIndex)
+	local heights = { 6.6, 4.6, 3.1 }
+	local height = heights[place] or 3
+	local zOffset = ({ 0, -7.2, 7.2 })[place] or 0
+	local xOffset = ({ -22, -14.5, -14.5 })[place] or -14
+	local center = Vector3.new(anchor.X + xOffset, 1 + height / 2, anchor.Z + zOffset)
+	return center, Vector3.new(7, height, 6.2)
 end
 
 function WorldLayout.PodiumName(boardId, place)

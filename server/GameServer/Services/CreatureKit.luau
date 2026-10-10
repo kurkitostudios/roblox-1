@@ -13,6 +13,8 @@ local CreatureKit = {}
 local FAMILY = {
 	zombie = "zombie",
 	zombie_corrotto = "zombie",
+	rotfang = "zombie",
+	grave_chieftain = "zombie",
 	scheletro = "skeleton",
 	scheletro_arciere = "skeleton",
 	goblin = "goblin",
@@ -44,8 +46,10 @@ local FAMILY = {
 }
 
 local LOOK = {
-	zombie = { skin = Color3.fromRGB(96, 140, 78), cloth = Color3.fromRGB(72, 62, 48), eyes = Color3.fromRGB(255, 70, 40) },
-	zombie_corrotto = { skin = Color3.fromRGB(64, 110, 78), cloth = Color3.fromRGB(46, 36, 64), eyes = Color3.fromRGB(190, 80, 255) },
+	zombie = { skin = Color3.fromRGB(118, 138, 86), cloth = Color3.fromRGB(62, 48, 36), eyes = Color3.fromRGB(110, 255, 130), hair = Color3.fromRGB(22, 16, 12), bone = Color3.fromRGB(196, 176, 140) },
+	zombie_corrotto = { skin = Color3.fromRGB(142, 124, 96), cloth = Color3.fromRGB(74, 52, 36), eyes = Color3.fromRGB(255, 150, 40), hair = Color3.fromRGB(36, 28, 22), bone = Color3.fromRGB(214, 196, 160) },
+	rotfang = { skin = Color3.fromRGB(92, 118, 68), cloth = Color3.fromRGB(48, 28, 22), eyes = Color3.fromRGB(150, 255, 70), hair = Color3.fromRGB(16, 10, 8), bone = Color3.fromRGB(180, 160, 130) },
+	grave_chieftain = { skin = Color3.fromRGB(156, 114, 80), cloth = Color3.fromRGB(128, 32, 28), eyes = Color3.fromRGB(255, 96, 36), hair = Color3.fromRGB(18, 12, 10), bone = Color3.fromRGB(220, 200, 170) },
 	scheletro = { skin = Color3.fromRGB(214, 208, 190), cloth = Color3.fromRGB(90, 86, 80), eyes = Color3.fromRGB(120, 220, 255) },
 	scheletro_arciere = { skin = Color3.fromRGB(200, 196, 180), cloth = Color3.fromRGB(70, 78, 54), eyes = Color3.fromRGB(140, 230, 160) },
 	goblin = { skin = Color3.fromRGB(78, 150, 62), cloth = Color3.fromRGB(120, 78, 40), eyes = Color3.fromRGB(255, 220, 80) },
@@ -222,7 +226,7 @@ local function addHumanoid(model, root, def, hip, pet)
 end
 
 local function addRing(model, root, def, hip)
-	local ring = piece(model, "AggroRing", Vector3.new(0.2, def.aggro * 2, def.aggro * 2), root.CFrame * CFrame.new(0, -hip + 0.15, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(190, 40, 40), Enum.Material.Neon, Enum.PartType.Cylinder, 0.78)
+	local ring = piece(model, "AggroRing", Vector3.new(0.06, def.aggro * 2, def.aggro * 2), root.CFrame * CFrame.new(0, -hip + 0.12, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(176, 64, 52), Enum.Material.Neon, Enum.PartType.Cylinder, 0.88)
 	ring.CanCollide = false
 	joint(root, ring, "Ring")
 	return ring
@@ -249,6 +253,7 @@ local function finish(model, root, def, hip, pet, evolution)
 	model:SetAttribute("EnemyTypeId", def.id)
 	model:SetAttribute("Rarity", def.rarity)
 	model:SetAttribute("KurkitoFamily", familyOf(def))
+	model:SetAttribute("KurkitoBehavior", def.behavior or "")
 	model:SetAttribute("KurkitoActor", pet and "Pet" or "Enemy")
 	model:SetAttribute("KurkitoState", "Idle")
 	if evolution then
@@ -401,36 +406,127 @@ local function slimeBody(model, root, cf, scale, look)
 	return body, body
 end
 
+local function graveBody(model, root, cf, scale, look, def)
+	local behavior = def.behavior or "scavenger"
+	local bone = look.bone or Color3.fromRGB(210, 196, 170)
+	local hairColor = look.hair or Color3.fromRGB(20, 14, 12)
+	local hunch = 0
+	local torsoSize = Vector3.new(1.55, 1.45, 0.9)
+	local armSize = Vector3.new(0.4, 1.45, 0.4)
+	if behavior == "scavenger" then
+		hunch = 18
+		torsoSize = Vector3.new(1.2, 1.3, 0.7)
+		armSize = Vector3.new(0.32, 1.55, 0.32)
+	elseif behavior == "bonewalker" then
+		hunch = 6
+		torsoSize = Vector3.new(1.95, 1.65, 1.05)
+		armSize = Vector3.new(0.5, 1.5, 0.5)
+	elseif behavior == "rotfang" then
+		hunch = 24
+		torsoSize = Vector3.new(1.85, 1.5, 1)
+		armSize = Vector3.new(0.48, 1.6, 0.48)
+	elseif behavior == "chieftain" then
+		hunch = 4
+		torsoSize = Vector3.new(2.2, 1.85, 1.25)
+		armSize = Vector3.new(0.58, 1.7, 0.58)
+	end
+	local torso = piece(model, "Torso", torsoSize * scale, cf * CFrame.new(0, 0.12 * scale, 0) * CFrame.Angles(math.rad(hunch), 0, 0), look.cloth, Enum.Material.Fabric)
+	joint(root, torso, "Torso")
+	local head = piece(model, "Head", Vector3.new(1.05, 1.05, 1.05) * scale, torso.CFrame * CFrame.new(0, 1.15 * scale, -0.05 * scale), look.skin, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+	joint(torso, head, "Head")
+	eye(model, head, head.CFrame * CFrame.new(-0.22 * scale, 0.06 * scale, -0.4 * scale), look.eyes, scale)
+	eye(model, head, head.CFrame * CFrame.new(0.22 * scale, 0.06 * scale, -0.4 * scale), look.eyes, scale)
+	local jaw = piece(model, "Jaw", Vector3.new(0.5, 0.2, 0.32) * scale, head.CFrame * CFrame.new(0, -0.36 * scale, -0.22 * scale), Color3.fromRGB(28, 22, 18), Enum.Material.SmoothPlastic)
+	joint(head, jaw, "Jaw")
+	local hairCount = behavior == "rotfang" and 7 or (behavior == "scavenger" and 5 or 3)
+	for index = 1, hairCount do
+		local angle = (index / hairCount) * math.pi * 2
+		local length = behavior == "rotfang" and 1.15 or 0.7
+		local clump = piece(model, "Hair" .. index, Vector3.new(0.22, length, 0.28) * scale, head.CFrame * CFrame.new(math.cos(angle) * 0.32 * scale, 0.35 * scale, math.sin(angle) * 0.2 * scale) * CFrame.Angles(0, 0, math.rad(18)), hairColor, Enum.Material.Fabric)
+		joint(head, clump, "Hair" .. index)
+	end
+	local armL = piece(model, "ArmL", armSize * scale, torso.CFrame * CFrame.new(-0.85 * scale, -0.05 * scale, 0), look.skin, Enum.Material.SmoothPlastic)
+	local armR = piece(model, "ArmR", armSize * scale, torso.CFrame * CFrame.new(0.85 * scale, -0.05 * scale, 0), look.skin, Enum.Material.SmoothPlastic)
+	joint(torso, armL, "ArmL")
+	joint(torso, armR, "ArmR")
+	local legL = piece(model, "LegL", Vector3.new(0.46, 1.55, 0.46) * scale, cf * CFrame.new(-0.34 * scale, -1.25 * scale, 0), look.skin:Lerp(Color3.new(0, 0, 0), 0.18), Enum.Material.SmoothPlastic)
+	local legR = piece(model, "LegR", Vector3.new(0.46, 1.55, 0.46) * scale, cf * CFrame.new(0.34 * scale, -1.25 * scale, 0), look.skin:Lerp(Color3.new(0, 0, 0), 0.18), Enum.Material.SmoothPlastic)
+	joint(torso, legL, "LegL")
+	joint(torso, legR, "LegR")
+	local clawColor = behavior == "rotfang" and look.eyes or bone
+	local clawL = piece(model, "ClawL", Vector3.new(0.12, 0.45, 0.12) * scale, armL.CFrame * CFrame.new(0, -0.85 * scale, -0.12 * scale), clawColor, Enum.Material.SmoothPlastic)
+	local clawR = piece(model, "ClawR", Vector3.new(0.12, 0.45, 0.12) * scale, armR.CFrame * CFrame.new(0, -0.85 * scale, -0.12 * scale), clawColor, Enum.Material.SmoothPlastic)
+	joint(armL, clawL, "ClawL")
+	joint(armR, clawR, "ClawR")
+	if behavior == "scavenger" then
+		for index = 1, 3 do
+			local rag = piece(model, "Rag" .. index, Vector3.new(0.45, 0.8, 0.08) * scale, torso.CFrame * CFrame.new(-0.4 * scale + index * 0.28 * scale, -0.55 * scale, -0.4 * scale), look.cloth:Lerp(bone, 0.2), Enum.Material.Fabric)
+			joint(torso, rag, "Rag" .. index)
+		end
+	elseif behavior == "bonewalker" then
+		local plate = piece(model, "BonePlate", Vector3.new(1.3, 1.1, 0.18) * scale, torso.CFrame * CFrame.new(0, 0.05 * scale, -0.55 * scale), bone, Enum.Material.SmoothPlastic)
+		joint(torso, plate, "BonePlate")
+		local shield = piece(model, "Shield", Vector3.new(1.35, 1.6, 0.18) * scale, armL.CFrame * CFrame.new(-0.15 * scale, -0.15 * scale, -0.35 * scale), bone, Enum.Material.SmoothPlastic)
+		joint(armL, shield, "Shield")
+		local shin = piece(model, "Shin", Vector3.new(0.5, 0.7, 0.2) * scale, legL.CFrame * CFrame.new(0, -0.2 * scale, -0.2 * scale), bone, Enum.Material.SmoothPlastic)
+		joint(legL, shin, "Shin")
+		local mask = piece(model, "Mask", Vector3.new(0.9, 0.45, 0.25) * scale, head.CFrame * CFrame.new(0, -0.05 * scale, -0.45 * scale), bone, Enum.Material.SmoothPlastic)
+		joint(head, mask, "Mask")
+	elseif behavior == "rotfang" then
+		local sash = piece(model, "Sash", Vector3.new(1.4, 0.35, 0.2) * scale, torso.CFrame * CFrame.new(0, -0.2 * scale, -0.5 * scale), Color3.fromRGB(120, 36, 28), Enum.Material.Fabric)
+		joint(torso, sash, "Sash")
+		local fangL = piece(model, "FangL", Vector3.new(0.1, 0.35, 0.1) * scale, head.CFrame * CFrame.new(-0.16 * scale, -0.42 * scale, -0.32 * scale), bone, Enum.Material.SmoothPlastic)
+		local fangR = piece(model, "FangR", Vector3.new(0.1, 0.35, 0.1) * scale, head.CFrame * CFrame.new(0.16 * scale, -0.42 * scale, -0.32 * scale), bone, Enum.Material.SmoothPlastic)
+		joint(head, fangL, "FangL")
+		joint(head, fangR, "FangR")
+	else
+		local wrap = piece(model, "RedWrap", Vector3.new(1.7, 0.55, 1.15) * scale, torso.CFrame * CFrame.new(0, -0.35 * scale, -0.1 * scale), look.cloth, Enum.Material.Fabric)
+		joint(torso, wrap, "RedWrap")
+		local crown = piece(model, "BoneCrown", Vector3.new(1.15, 0.28, 1.15) * scale, head.CFrame * CFrame.new(0, 0.55 * scale, 0), bone, Enum.Material.SmoothPlastic)
+		joint(head, crown, "BoneCrown")
+		local spike = piece(model, "Spike", Vector3.new(0.16, 0.7, 0.16) * scale, crown.CFrame * CFrame.new(0, 0.4 * scale, 0), bone, Enum.Material.SmoothPlastic)
+		joint(crown, spike, "Spike")
+		local totem = piece(model, "Totem", Vector3.new(0.28, 2.4, 0.28) * scale, armR.CFrame * CFrame.new(0, -0.4 * scale, -0.3 * scale), Color3.fromRGB(92, 58, 36), Enum.Material.Wood)
+		joint(armR, totem, "Totem")
+		local totemSkull = piece(model, "TotemSkull", Vector3.new(0.45, 0.4, 0.4) * scale, totem.CFrame * CFrame.new(0, -1 * scale, 0), bone, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		joint(totem, totemSkull, "TotemSkull")
+		local belt = piece(model, "SkullBelt", Vector3.new(0.4, 0.4, 0.4) * scale, torso.CFrame * CFrame.new(0, -0.7 * scale, -0.55 * scale), bone, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		joint(torso, belt, "SkullBelt")
+	end
+	return torso, head
+end
+
 local function rarityTrim(model, torso, head, def, scale, look, pet)
 	local rarity = def.rarity
-	if rarity == "Uncommon" or rarity == "Rare" or rarity == "Elite" or rarity == "Boss" then
+	local grave = def.behavior == "scavenger" or def.behavior == "bonewalker" or def.behavior == "rotfang" or def.behavior == "chieftain"
+	if not grave and (rarity == "Uncommon" or rarity == "Rare" or rarity == "Elite" or rarity == "Boss") then
 		local gem = piece(model, "Gem", Vector3.new(0.28, 0.28, 0.28) * scale, torso.CFrame * CFrame.new(0, 0.15 * scale, -0.5 * scale), EnemyConfig.RarityColor[rarity], Enum.Material.Neon, Enum.PartType.Ball)
 		joint(torso, gem, "Gem")
 	end
-	if rarity == "Elite" or rarity == "Boss" then
+	if not grave and (rarity == "Elite" or rarity == "Boss") then
 		local hornL = piece(model, "HornL", Vector3.new(0.16, 0.7, 0.16) * scale, head.CFrame * CFrame.new(-0.28 * scale, 0.55 * scale, 0) * CFrame.Angles(0, 0, math.rad(18)), look.cloth, Enum.Material.SmoothPlastic)
 		local hornR = piece(model, "HornR", Vector3.new(0.16, 0.7, 0.16) * scale, head.CFrame * CFrame.new(0.28 * scale, 0.55 * scale, 0) * CFrame.Angles(0, 0, math.rad(-18)), look.cloth, Enum.Material.SmoothPlastic)
 		joint(head, hornL, "HornL")
 		joint(head, hornR, "HornR")
 	end
-	if rarity == "Boss" then
+	if rarity == "Boss" and not grave then
 		local crown = piece(model, "Crown", Vector3.new(1.2, 0.28, 1.2) * scale, head.CFrame * CFrame.new(0, 0.62 * scale, 0), Color3.fromRGB(212, 170, 60), Enum.Material.Metal)
 		joint(head, crown, "Crown")
-		if not pet then
-			local highlight = Instance.new("Highlight")
-			highlight.Name = "BossGlow"
-			highlight.FillColor = EnemyConfig.RarityColor.Boss
-			highlight.OutlineColor = Color3.fromRGB(255, 220, 140)
-			highlight.FillTransparency = 0.82
-			highlight.OutlineTransparency = 0.35
-			highlight.Parent = model
-			local light = Instance.new("PointLight")
-			light.Color = EnemyConfig.RarityColor.Boss
-			light.Range = 10
-			light.Brightness = 0.45
-			light.Shadows = false
-			light.Parent = torso
-		end
+	end
+	if rarity == "Boss" and not pet then
+		local highlight = Instance.new("Highlight")
+		highlight.Name = "BossGlow"
+		highlight.FillColor = EnemyConfig.RarityColor.Boss
+		highlight.OutlineColor = Color3.fromRGB(255, 210, 140)
+		highlight.FillTransparency = 0.84
+		highlight.OutlineTransparency = 0.4
+		highlight.Parent = model
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(255, 120, 50)
+		light.Range = 12
+		light.Brightness = 0.4
+		light.Shadows = false
+		light.Parent = torso
 	end
 	emitter(torso, EnemyConfig.RarityColor[rarity] or look.eyes, RARITY_RATE[rarity] or 0)
 end
@@ -454,7 +550,9 @@ local function build(def, cf, pet, evolution)
 	root.Transparency = 1
 	root.Massless = false
 	local torso, head
-	if family == "wolf" then
+	if def.behavior == "scavenger" or def.behavior == "bonewalker" or def.behavior == "rotfang" or def.behavior == "chieftain" then
+		torso, head = graveBody(model, root, cf, scale, look, def)
+	elseif family == "wolf" then
 		torso, head = beastBody(model, root, cf, scale, look, 4)
 	elseif family == "spider" then
 		torso, head = spiderBody(model, root, cf, scale, look)
