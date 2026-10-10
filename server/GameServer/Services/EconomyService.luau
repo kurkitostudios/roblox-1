@@ -24,7 +24,7 @@ end
 function EconomyService.TrySpend(player, amount)
 	local data = PlayerData.Get(player)
 	if not data then
-		return false, "Dati non caricati."
+		return false, "Data is not loaded."
 	end
 	local ok, newCoins, reason = Rules.TrySpend(data.coins, amount)
 	if not ok then

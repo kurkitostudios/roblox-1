@@ -15,17 +15,17 @@ end
 for arena = 1, 15 do
 	item({
 		id = "mat_arena_" .. arena,
-		name = "Frammento Arena " .. arena,
+		name = "Arena " .. arena .. " Fragment",
 		category = "materials",
 		rarity = "Common",
-		description = "Materiale provvisorio. La forgia non è in questa build.",
+		description = "A crafting material. There is no forge in this build.",
 	})
 	item({
 		id = "relic_arena_" .. arena,
-		name = "Reliquia Arena " .. arena,
+		name = "Arena " .. arena .. " Relic",
 		category = "collectibles",
 		rarity = "Rare",
-		description = "Collezionabile del Mondo 1.",
+		description = "A World 1 collectible.",
 	})
 end
 
@@ -38,33 +38,33 @@ local function gear(id, name, slot, classId, rarity, bonuses)
 		classId = classId,
 		rarity = rarity,
 		bonuses = bonuses,
-		description = "Equipaggiamento prototipo.",
+		description = "Equipment. Stats apply while it is equipped.",
 	})
 end
 
-gear("warrior_blade_1", "Lama del Recluta", "weapon", "Warrior", "Common", { dmg = 3 })
-gear("warrior_blade_2", "Spada del Veterano", "weapon", "Warrior", "Rare", { dmg = 8 })
-gear("warrior_blade_3", "Spadone del Campione", "weapon", "Warrior", "Epic", { dmg = 16 })
-gear("warrior_armor_1", "Cotta Semplice", "armor", "Warrior", "Common", { hp = 12 })
-gear("warrior_armor_2", "Armatura di Ferro", "armor", "Warrior", "Rare", { hp = 30 })
-gear("warrior_armor_3", "Corazza del Campione", "armor", "Warrior", "Epic", { hp = 60 })
+gear("warrior_blade_1", "Recruit Blade", "weapon", "Warrior", "Common", { dmg = 3 })
+gear("warrior_blade_2", "Veteran Sword", "weapon", "Warrior", "Rare", { dmg = 8 })
+gear("warrior_blade_3", "Champion Greatsword", "weapon", "Warrior", "Epic", { dmg = 16 })
+gear("warrior_armor_1", "Simple Hauberk", "armor", "Warrior", "Common", { hp = 12 })
+gear("warrior_armor_2", "Iron Armor", "armor", "Warrior", "Rare", { hp = 30 })
+gear("warrior_armor_3", "Champion Plate", "armor", "Warrior", "Epic", { hp = 60 })
 
-gear("mage_staff_1", "Ramo Arcano", "weapon", "Mage", "Common", { dmg = 3 })
-gear("mage_staff_2", "Bastone delle Braci", "weapon", "Mage", "Rare", { dmg = 9 })
-gear("mage_staff_3", "Bastone Astrale", "weapon", "Mage", "Epic", { dmg = 18 })
-gear("mage_robe_1", "Veste del Novizio", "armor", "Mage", "Common", { hp = 8 })
-gear("mage_robe_2", "Veste Runica", "armor", "Mage", "Rare", { hp = 22 })
-gear("mage_robe_3", "Veste del Magister", "armor", "Mage", "Epic", { hp = 45 })
+gear("mage_staff_1", "Arcane Branch", "weapon", "Mage", "Common", { dmg = 3 })
+gear("mage_staff_2", "Ember Staff", "weapon", "Mage", "Rare", { dmg = 9 })
+gear("mage_staff_3", "Astral Staff", "weapon", "Mage", "Epic", { dmg = 18 })
+gear("mage_robe_1", "Novice Robe", "armor", "Mage", "Common", { hp = 8 })
+gear("mage_robe_2", "Runic Robe", "armor", "Mage", "Rare", { hp = 22 })
+gear("mage_robe_3", "Magister Robe", "armor", "Mage", "Epic", { hp = 45 })
 
-gear("archer_bow_1", "Arco Corto", "weapon", "Archer", "Common", { dmg = 3 })
-gear("archer_bow_2", "Arco Lungo", "weapon", "Archer", "Rare", { dmg = 8 })
-gear("archer_bow_3", "Arco del Falco", "weapon", "Archer", "Epic", { dmg = 15 })
-gear("archer_armor_1", "Giaco di Cuoio", "armor", "Archer", "Common", { hp = 10 })
-gear("archer_armor_2", "Corpetto da Cacciatore", "armor", "Archer", "Rare", { hp = 24 })
-gear("archer_armor_3", "Manto della Selva", "armor", "Archer", "Epic", { hp = 48 })
+gear("archer_bow_1", "Shortbow", "weapon", "Archer", "Common", { dmg = 3 })
+gear("archer_bow_2", "Longbow", "weapon", "Archer", "Rare", { dmg = 8 })
+gear("archer_bow_3", "Hawk Bow", "weapon", "Archer", "Epic", { dmg = 15 })
+gear("archer_armor_1", "Leather Jack", "armor", "Archer", "Common", { hp = 10 })
+gear("archer_armor_2", "Hunter Vest", "armor", "Archer", "Rare", { hp = 24 })
+gear("archer_armor_3", "Grove Cloak", "armor", "Archer", "Epic", { hp = 48 })
 
-gear("charm_minor", "Amuleto Minore", "charm", nil, "Uncommon", { fortune = 0.04 })
-gear("charm_major", "Amuleto Maggiore", "charm", nil, "Epic", { fortune = 0.08, hp = 10 })
+gear("charm_minor", "Minor Charm", "charm", nil, "Uncommon", { fortune = 0.04 })
+gear("charm_major", "Major Charm", "charm", nil, "Epic", { fortune = 0.08, hp = 10 })
 
 for potionId, potion in PotionConfig.Potions do
 	item({
@@ -73,7 +73,7 @@ for potionId, potion in PotionConfig.Potions do
 		category = "potions",
 		rarity = potion.rarity,
 		family = potion.family,
-		description = "Consumabile. Stessa famiglia: sostituzione, non stack.",
+		description = potion.description or "Consumable. Same family replaces the previous potion.",
 	})
 end
 

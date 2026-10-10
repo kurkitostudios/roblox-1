@@ -94,7 +94,7 @@ local function applyHumanoid(player, fullHeal)
 	end
 	player:SetAttribute("KurkitoHero", data.selectedHero)
 	local appearance = require(script.Parent.HeroAppearance)
-	appearance.Apply(character, data.selectedHero, data.heroes[data.selectedHero])
+	appearance.Apply(character, data.selectedHero, data.heroes[data.selectedHero], data)
 end
 
 function HeroService.Refresh(player, fullHeal)
@@ -144,7 +144,7 @@ end
 function HeroService.Select(player, heroId)
 	local data = PlayerData.Get(player)
 	if not data then
-		return { ok = false, error = "Dati non caricati." }
+		return { ok = false, error = "Data is not loaded." }
 	end
 	local ok, reason = Rules.SelectFirstHero(data, heroId, valid)
 	if not ok then
@@ -153,17 +153,17 @@ function HeroService.Select(player, heroId)
 	PlayerData.MarkDirty(player, true)
 	PlayerData.Save(player, false)
 	applyHumanoid(player, true)
-	Notifier.Send(player, "info", HeroConfig.Classes[heroId].displayName .. " è il tuo primo eroe.")
+	Notifier.Send(player, "info", HeroConfig.Classes[heroId].displayName .. " is your first hero.")
 	return { ok = true }
 end
 
 function HeroService.Switch(player, heroId)
 	local data = PlayerData.Get(player)
 	if not data then
-		return { ok = false, error = "Dati non caricati." }
+		return { ok = false, error = "Data is not loaded." }
 	end
 	if not requireManageZone(player) then
-		return { ok = false, error = "Cambia eroe dalla lobby o dalla zona eroi." }
+		return { ok = false, error = "Switch heroes in the lobby or at the hero post." }
 	end
 	local ok, reason = Rules.SwitchHero(data, heroId)
 	if not ok then
@@ -181,14 +181,14 @@ function HeroService.Switch(player, heroId)
 	runtime.buffs.hawkUntil = 0
 	PlayerData.MarkDirty(player, true)
 	applyHumanoid(player, true)
-	Notifier.Send(player, "info", "Eroe attivo: " .. HeroConfig.Classes[heroId].displayName)
+	Notifier.Send(player, "info", "Active hero: " .. HeroConfig.Classes[heroId].displayName)
 	return { ok = true }
 end
 
 function HeroService.SwitchNext(player)
 	local data = PlayerData.Get(player)
 	if not data or data.selectedHero == "" then
-		return { ok = false, error = "Nessun eroe attivo." }
+		return { ok = false, error = "No active hero." }
 	end
 	local startIndex = 1
 	for index, heroId in ipairs(HeroConfig.Order) do
@@ -202,7 +202,7 @@ function HeroService.SwitchNext(player)
 			return HeroService.Switch(player, heroId)
 		end
 	end
-	return { ok = false, error = "Non hai altri eroi sbloccati." }
+	return { ok = false, error = "You have no other unlocked hero." }
 end
 
 function HeroService.Bind(ctx)
@@ -210,14 +210,14 @@ function HeroService.Bind(ctx)
 	ctx.services.RemotesService.Bind(ctx, "SelectHero", rates.SelectHero, function(player, payload)
 		local heroId = payload.heroId
 		if type(heroId) ~= "string" then
-			return { ok = false, error = "Eroe non valido." }
+			return { ok = false, error = "Invalid hero." }
 		end
 		return HeroService.Select(player, heroId)
 	end)
 	ctx.services.RemotesService.Bind(ctx, "SwitchHero", rates.SwitchHero, function(player, payload)
 		local heroId = payload.heroId
 		if type(heroId) ~= "string" then
-			return { ok = false, error = "Eroe non valido." }
+			return { ok = false, error = "Invalid hero." }
 		end
 		return HeroService.Switch(player, heroId)
 	end)

@@ -3,12 +3,15 @@
 -- allo spawn e, finché è in Returning, ignora l'aggro.
 
 local PhysicsService = game:GetService("PhysicsService")
-local Debris = game:GetService("Debris")
+local PathfindingService = game:GetService("PathfindingService")
+local TweenService = game:GetService("TweenService")
 
 local shared = require(script.Parent.SharedLoader)
 local EnemyConfig = shared("EnemyConfig")
 local WorldLayout = shared("WorldLayout")
 local GameConfig = shared("GameConfig")
+local WorldTextConfig = shared("WorldTextConfig")
+local CreatureKit = require(script.Parent.CreatureKit)
 
 local EnemyService = {}
 
@@ -33,85 +36,45 @@ local function effectsFolder()
 	return world:FindFirstChild("Effects") or world
 end
 
-local function weld(part0, part1)
-	local joint = Instance.new("WeldConstraint")
-	joint.Part0 = part0
-	joint.Part1 = part1
-	joint.Parent = part1
-end
+local popupLive = 0
 
-local function buildModel(def, position)
-	local scale = def.scale or 1
-	local height = 4.2 * scale
-	local model = Instance.new("Model")
-	model.Name = def.id
-	local color = EnemyConfig.BodyColor[def.rarity] or Color3.fromRGB(90, 120, 90)
-	local root = Instance.new("Part")
-	root.Name = "HumanoidRootPart"
-	root.Size = Vector3.new(2.2 * scale, height, 1.3 * scale)
-	root.Color = color
-	root.Material = def.rarity == "Boss" and Enum.Material.Neon or Enum.Material.SmoothPlastic
-	root.CanCollide = true
-	root.CollisionGroup = "KurkitoEnemies"
-	root.CFrame = CFrame.new(position)
-	root.Parent = model
-
-	local head = Instance.new("Part")
-	head.Name = "Head"
-	head.Shape = Enum.PartType.Ball
-	head.Size = Vector3.new(1.5, 1.5, 1.5) * scale
-	head.Color = color:Lerp(Color3.new(1, 1, 1), 0.15)
-	head.Material = root.Material
-	head.CanCollide = false
-	head.Massless = true
-	head.CollisionGroup = "KurkitoEnemies"
-	head.CFrame = root.CFrame * CFrame.new(0, height * 0.55, 0)
-	head.Parent = model
-	weld(root, head)
-
-	local ring = Instance.new("Part")
-	ring.Name = "AggroRing"
-	ring.Shape = Enum.PartType.Cylinder
-	ring.Size = Vector3.new(0.25, def.aggro * 2, def.aggro * 2)
-	ring.Color = Color3.fromRGB(190, 40, 40)
-	ring.Material = Enum.Material.Neon
-	ring.Transparency = 0.72
-	ring.CanCollide = false
-	ring.CanQuery = false
-	ring.CanTouch = false
-	ring.Massless = true
-	ring.CFrame = CFrame.new(position - Vector3.new(0, height * 0.5 - 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90))
-	ring.Parent = model
-	weld(root, ring)
-
-	local humanoid = Instance.new("Humanoid")
-	humanoid.Name = "Humanoid"
-	humanoid.DisplayName = def.name
-	humanoid.MaxHealth = def.hp
-	humanoid.Health = def.hp
-	humanoid.WalkSpeed = def.speed
-	humanoid.HipHeight = height * 0.5
-	humanoid.BreakJointsOnDeath = false
-	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
-	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.DisplayWhenDamaged
-	humanoid.NameDisplayDistance = 80
-	humanoid.HealthDisplayDistance = 80
-	humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-	humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-	humanoid.Parent = model
-
-	local attachment = Instance.new("Attachment")
-	attachment.Parent = root
-	local align = Instance.new("AlignOrientation")
-	align.Mode = Enum.OrientationAlignmentMode.OneAttachment
-	align.Attachment0 = attachment
-	align.RigidityEnabled = true
-	align.Parent = root
-
-	model.PrimaryPart = root
-	model:SetAttribute("EnemyTypeId", def.id)
-	model:SetAttribute("Rarity", def.rarity)
-	return model, humanoid, root
+local function spawnDamagePopup(position, amount)
+	if popupLive >= 24 then
+		return
+	end
+	popupLive += 1
+	local popup = Instance.new("Part")
+	popup.Anchored = true
+	popup.CanCollide = false
+	popup.CanQuery = false
+	popup.CanTouch = false
+	popup.Transparency = 1
+	popup.Size = Vector3.new(0.2, 0.2, 0.2)
+	popup.Position = position + Vector3.new(math.random(-10, 10) / 10, 3.4, 0)
+	popup.Parent = effectsFolder()
+	local billboard = Instance.new("BillboardGui")
+	billboard.Size = UDim2.fromOffset(84, 32)
+	billboard.StudsOffset = Vector3.new(0, 0.4, 0)
+	billboard.Parent = popup
+	WorldTextConfig.Mark(billboard, "DamageNumber")
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.Font = Enum.Font.GothamBold
+	label.TextScaled = true
+	label.TextColor3 = Color3.fromRGB(255, 228, 150)
+	label.TextStrokeTransparency = 0.35
+	label.Text = tostring(amount)
+	label.Parent = billboard
+	TweenService:Create(popup, TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Position = popup.Position + Vector3.new(0, 2.1, 0),
+	}):Play()
+	task.delay(0.65, function()
+		popupLive = math.max(0, popupLive - 1)
+		if popup.Parent then
+			popup:Destroy()
+		end
+	end)
 end
 
 local function playerRoot(player)
@@ -139,10 +102,10 @@ function EnemyService.Start(context)
 		for _, spawn in ipairs(EnemyConfig.SpawnPlan(arenaIndex)) do
 			local offset = EnemyConfig.SpawnOffset(spawn.slot, spawn.boss)
 			local def = spawn.def
-			local hip = (4.2 * (def.scale or 1)) * 0.5
+			local hip = CreatureKit.Hip(def)
 			local position = Vector3.new(center.X + offset.X, 1 + hip, center.Z + offset.Z)
 			local id = string.format("a%d_s%d", arenaIndex, spawn.slot)
-			local model, humanoid, root = buildModel(def, position)
+			local model, humanoid, root, align = CreatureKit.Build(def, position)
 			model.Name = "Enemy_" .. id
 			model.Parent = parent or workspace
 			pcall(function()
@@ -155,6 +118,7 @@ function EnemyService.Start(context)
 				model = model,
 				humanoid = humanoid,
 				root = root,
+				align = align,
 				spawnPosition = position,
 				state = "Idle",
 				target = nil,
@@ -232,6 +196,62 @@ local function setState(enemy, state)
 	if enemy.state ~= state then
 		enemy.state = state
 		enemy.stateSince = os.clock()
+		if enemy.model then
+			enemy.model:SetAttribute("KurkitoState", state)
+		end
+	end
+end
+
+local function faceTarget(enemy, targetPosition)
+	local align = enemy.align
+	local root = enemy.root
+	if not align or not root then
+		return
+	end
+	local flat = Vector3.new(targetPosition.X, root.Position.Y, targetPosition.Z)
+	if (flat - root.Position).Magnitude < 1.25 then
+		align.Enabled = false
+		return
+	end
+	align.Enabled = true
+	align.CFrame = CFrame.lookAt(root.Position, flat)
+end
+
+local function releaseFacing(enemy)
+	if enemy.align then
+		enemy.align.Enabled = false
+	end
+end
+
+local function nudgeAroundObstacle(enemy, targetPosition, now)
+	local root = enemy.root
+	local flat = targetPosition - root.Position
+	flat = Vector3.new(flat.X, 0, flat.Z)
+	if flat.Magnitude < 0.5 then
+		return
+	end
+	local side = Vector3.new(-flat.Z, 0, flat.X).Unit * 8 * (enemy.sideSign or 1)
+	enemy.sideSign = -(enemy.sideSign or 1)
+	enemy.humanoid:MoveTo(root.Position + side + flat.Unit * 6)
+	if (enemy.stuck or 0) > 3.2 and now - (enemy.pathAt or 0) > 2.4 then
+		enemy.pathAt = now
+		local path = PathfindingService:CreatePath({
+			AgentRadius = 2.2,
+			AgentHeight = 5,
+			AgentCanJump = false,
+			WaypointSpacing = 8,
+		})
+		local ok = pcall(function()
+			path:ComputeAsync(root.Position, targetPosition)
+		end)
+		if ok and path.Status == Enum.PathStatus.Success then
+			local waypoints = path:GetWaypoints()
+			local nextPoint = waypoints[2] or waypoints[1]
+			if nextPoint then
+				enemy.humanoid:MoveTo(nextPoint.Position)
+				enemy.pathHold = now + 0.55
+			end
+		end
 	end
 end
 
@@ -244,7 +264,7 @@ function EnemyService.Respawn(enemy)
 	enemy.generation += 1
 	local generation = enemy.generation
 	local previous = enemy.model
-	local model, humanoid, root = buildModel(enemy.def, enemy.spawnPosition)
+	local model, humanoid, root, align = CreatureKit.Build(enemy.def, enemy.spawnPosition)
 	model.Name = "Enemy_" .. enemy.id
 	model.Parent = parent
 	pcall(function()
@@ -253,6 +273,7 @@ function EnemyService.Respawn(enemy)
 	enemy.model = model
 	enemy.humanoid = humanoid
 	enemy.root = root
+	enemy.align = align
 	enemy.rewarded = false
 	enemy.damageByUserId = {}
 	enemy.lastHitUserId = nil
@@ -305,28 +326,10 @@ function EnemyService.Damage(enemy, player, amount)
 	enemy.damageByUserId[player.UserId] = (enemy.damageByUserId[player.UserId] or 0) + amount
 	enemy.lastHitUserId = player.UserId
 	enemy.humanoid.Health -= amount
-	local popup = Instance.new("Part")
-	popup.Anchored = true
-	popup.CanCollide = false
-	popup.CanQuery = false
-	popup.Transparency = 1
-	popup.Size = Vector3.new(0.2, 0.2, 0.2)
-	popup.Position = enemy.root.Position + Vector3.new(math.random(-1, 1), 3.2, 0)
-	popup.Parent = effectsFolder()
-	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.fromOffset(70, 28)
-	billboard.AlwaysOnTop = true
-	billboard.Parent = popup
-	local label = Instance.new("TextLabel")
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.fromScale(1, 1)
-	label.Font = Enum.Font.GothamBold
-	label.TextScaled = true
-	label.TextColor3 = Color3.fromRGB(255, 220, 120)
-	label.TextStrokeTransparency = 0.4
-	label.Text = tostring(amount)
-	label.Parent = billboard
-	Debris:AddItem(popup, 0.7)
+	if enemy.model then
+		enemy.model:SetAttribute("KurkitoHitAt", os.clock())
+	end
+	spawnDamagePopup(enemy.root.Position, amount)
 	if enemy.humanoid.Health <= 0 then
 		EnemyService.Kill(enemy)
 	end
@@ -344,6 +347,7 @@ function EnemyService.Tick(_dt)
 			end
 			local away = (enemy.root.Position - enemy.spawnPosition).Magnitude
 			if enemy.state == "Returning" then
+				releaseFacing(enemy)
 				enemy.humanoid.WalkSpeed = enemy.def.speed * 1.45
 				enemy.humanoid:MoveTo(enemy.spawnPosition)
 				if away <= GameConfig.Combat.ReturnArriveDistance or now - enemy.stateSince > 12 then
@@ -371,6 +375,7 @@ function EnemyService.Tick(_dt)
 				end
 				local targetRoot = playerRoot(enemy.target)
 				if enemy.state == "Idle" then
+					releaseFacing(enemy)
 					local nearest = nearestPlayer(enemy.root.Position, enemy.def.aggro, enemy.arenaIndex)
 					if nearest then
 						enemy.target = nearest
@@ -392,11 +397,14 @@ function EnemyService.Tick(_dt)
 						setState(enemy, "Idle")
 					else
 						local distance = (targetRoot.Position - enemy.root.Position).Magnitude
+						faceTarget(enemy, targetRoot.Position)
 						if distance <= enemy.def.range then
 							setState(enemy, "Attacking")
 							enemy.humanoid.WalkSpeed = 0
+							enemy.stuck = 0
 							if now - enemy.lastAttack >= enemy.def.interval then
 								enemy.lastAttack = now
+								enemy.model:SetAttribute("KurkitoSwing", now)
 								if ctx and ctx.services.CombatService then
 									ctx.services.CombatService.DamagePlayer(enemy.target, enemy.def.dmg)
 								end
@@ -404,7 +412,20 @@ function EnemyService.Tick(_dt)
 						else
 							setState(enemy, "Chasing")
 							enemy.humanoid.WalkSpeed = enemy.def.speed
-							enemy.humanoid:MoveTo(targetRoot.Position)
+							local previous = enemy.previousGap
+							if previous and distance > previous - 0.35 then
+								enemy.stuck = (enemy.stuck or 0) + 0.2
+							else
+								enemy.stuck = 0
+							end
+							enemy.previousGap = distance
+							if enemy.pathHold and now < enemy.pathHold then
+								-- Un waypoint è già stato assegnato.
+							elseif (enemy.stuck or 0) > 1.5 then
+								nudgeAroundObstacle(enemy, targetRoot.Position, now)
+							else
+								enemy.humanoid:MoveTo(targetRoot.Position)
+							end
 						end
 					end
 				end

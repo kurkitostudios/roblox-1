@@ -40,19 +40,19 @@ function StudioCommands.Start()
 			if command == "coins" then
 				local amount = tonumber(arg)
 				if not amount or amount <= 0 then
-					reply(player, "Uso: /coins 1000")
+					reply(player, "Usage: /coins 1000")
 					return
 				end
 				data.coins = Rules.AddCoins(data.coins, math.floor(amount), GameConfig.MaxCoins)
 				PlayerData.MarkDirty(player, true)
-				reply(player, "Monete di test: " .. tostring(data.coins))
+				reply(player, "Test coins: " .. tostring(data.coins))
 			elseif command == "mastery" then
 				if data.selectedHero == "" then
 					return
 				end
 				local level = tonumber(arg)
 				if not level then
-					reply(player, "Uso: /mastery 50")
+					reply(player, "Usage: /mastery 50")
 					return
 				end
 				level = math.clamp(math.floor(level), 0, GameConfig.MaxMastery)
@@ -65,40 +65,40 @@ function StudioCommands.Start()
 					spent += rank
 				end
 				if level < spent then
-					reply(player, "Maestria inferiore ai punti già spesi.")
+					reply(player, "Mastery is below the points already spent.")
 					return
 				end
 				hero.mastery = level
 				hero.xp = 0
 				hero.skillPoints = level - spent
 				PlayerData.MarkDirty(player, true)
-				reply(player, "Maestria di test: " .. tostring(level))
+				reply(player, "Test mastery: " .. tostring(level))
 			elseif command == "xp" then
 				local amount = tonumber(arg)
 				if amount and amount > 0 and data.selectedHero ~= "" then
 					require(script.Parent.MasteryService).AddBaseXp(player, math.floor(amount))
-					reply(player, "XP di test aggiunta.")
+					reply(player, "Test XP added.")
 				end
 			elseif command == "pet" then
 				local petId = arg ~= "" and arg or "zombie"
 				if not PetConfig.Get(petId) then
-					reply(player, "Pet sconosciuto.")
+					reply(player, "Unknown pet.")
 					return
 				end
 				local pet, err = PetService.Grant(player, petId, "Normal")
-				reply(player, pet and ("Pet di test: " .. petId) or (err or "Pet non creato."))
+				reply(player, pet and ("Test pet: " .. petId) or (err or "Pet was not created."))
 			elseif command == "potion" then
 				local potionId = arg ~= "" and arg or "health_common"
 				if not PotionConfig.Get(potionId) then
-					reply(player, "Pozione sconosciuta.")
+					reply(player, "Unknown potion.")
 					return
 				end
 				local ok, reason = Rules.AddStack(data.inventory.potions, potionId, 1, GameConfig.Inventory.MaxStack)
 				if ok then
 					PlayerData.MarkDirty(player, true)
-					reply(player, "Pozione di test: " .. potionId)
+					reply(player, "Test potion: " .. potionId)
 				else
-					reply(player, reason or "Pozione non aggiunta.")
+					reply(player, reason or "Potion was not added.")
 				end
 			elseif command == "kills" then
 				local amount = math.floor(tonumber(arg) or 1)
@@ -110,7 +110,7 @@ function StudioCommands.Start()
 					end
 					PlayerData.MarkDirty(player, true)
 					HeroService.Refresh(player, false)
-					reply(player, "Kill di test: " .. tostring(amount))
+					reply(player, "Test kills: " .. tostring(amount))
 				end
 			end
 		end)

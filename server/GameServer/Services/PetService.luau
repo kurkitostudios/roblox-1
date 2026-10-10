@@ -21,16 +21,16 @@ end
 function PetService.Grant(player, petId, evolution)
 	local data = PlayerData.Get(player)
 	if not data then
-		return nil, "Dati non caricati."
+		return nil, "Data is not loaded."
 	end
 	if not PetConfig.Get(petId) then
-		return nil, "Pet sconosciuto."
+		return nil, "Unknown pet."
 	end
 	if not PetConfig.EvolutionMult[evolution or "Normal"] then
-		return nil, "Evoluzione non valida."
+		return nil, "Invalid evolution."
 	end
 	if #data.pets >= GameConfig.Inventory.MaxPets then
-		return nil, "Inventario Pet pieno."
+		return nil, "Pet inventory is full."
 	end
 	local pet = {
 		uid = HttpService:GenerateGUID(false),
@@ -45,14 +45,14 @@ end
 function PetService.Equip(player, uid, slot)
 	local data = PlayerData.Get(player)
 	if not data then
-		return { ok = false, error = "Dati non caricati." }
+		return { ok = false, error = "Data is not loaded." }
 	end
 	if type(uid) ~= "string" or not findPet(data, uid) then
-		return { ok = false, error = "Pet non posseduto." }
+		return { ok = false, error = "You do not own that pet." }
 	end
 	slot = slot or 0
 	if type(slot) ~= "number" or slot ~= math.floor(slot) then
-		return { ok = false, error = "Slot non valido." }
+		return { ok = false, error = "Invalid slot." }
 	end
 	for index, equipped in ipairs(data.equippedPets) do
 		if equipped == uid then
@@ -69,22 +69,22 @@ function PetService.Equip(player, uid, slot)
 		end
 	end
 	if not target then
-		return { ok = false, error = "Hai già 3 Pet equipaggiati." }
+		return { ok = false, error = "You already have 3 pets equipped." }
 	end
 	data.equippedPets[target] = uid
 	PlayerData.MarkDirty(player, true)
 	HeroService.Refresh(player, false)
-	Notifier.Send(player, "info", "Pet equipaggiato nello slot " .. tostring(target) .. ".")
+	Notifier.Send(player, "info", "Pet equipped in slot " .. tostring(target) .. ".")
 	return { ok = true }
 end
 
 function PetService.Unequip(player, slot)
 	local data = PlayerData.Get(player)
 	if not data then
-		return { ok = false, error = "Dati non caricati." }
+		return { ok = false, error = "Data is not loaded." }
 	end
 	if type(slot) ~= "number" or slot < 1 or slot > PetConfig.MaxEquipped or slot ~= math.floor(slot) then
-		return { ok = false, error = "Slot non valido." }
+		return { ok = false, error = "Invalid slot." }
 	end
 	data.equippedPets[slot] = ""
 	PlayerData.MarkDirty(player, true)

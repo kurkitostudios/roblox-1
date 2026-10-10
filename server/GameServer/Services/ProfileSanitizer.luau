@@ -64,33 +64,33 @@ end
 
 local function copyHero(classId, raw)
 	if type(raw) ~= "table" then
-		return fail("Eroe mancante: " .. classId)
+		return fail("Missing hero: " .. classId)
 	end
 	local classDef = HeroConfig.Classes[classId]
 	if not isInteger(raw.mastery, 0, GameConfig.MaxMastery) then
-		return fail("Maestria non valida.")
+		return fail("Invalid mastery.")
 	end
 	if not isInteger(raw.xp, 0, 100000000) then
-		return fail("XP non valida.")
+		return fail("Invalid XP.")
 	end
 	if raw.mastery >= GameConfig.MaxMastery and raw.xp ~= 0 then
-		return fail("XP oltre il limite di Maestria.")
+		return fail("XP is above the Mastery cap.")
 	end
 	if not isInteger(raw.rebirths, 0, 100000) then
-		return fail("Rebirth non valido.")
+		return fail("Invalid rebirth count.")
 	end
 	if not isInteger(raw.skillPoints, 0, GameConfig.MaxMastery) then
-		return fail("Skill Point non validi.")
+		return fail("Invalid Skill Points.")
 	end
 
 	local stats = {}
 	if type(raw.stats) ~= "table" then
-		return fail("Statistiche mancanti.")
+		return fail("Missing stats.")
 	end
 	for _, statId in ipairs(classDef.stats) do
 		local maxLevel = HeroConfig.StatDefs[statId].maxLevel
 		if not isInteger(raw.stats[statId], 1, maxLevel) then
-			return fail("Statistica non valida: " .. statId)
+			return fail("Invalid stat: " .. statId)
 		end
 		stats[statId] = raw.stats[statId]
 	end
@@ -98,12 +98,12 @@ local function copyHero(classId, raw)
 	local skillRanks = {}
 	local spent = 0
 	if type(raw.skillRanks) ~= "table" then
-		return fail("Abilità mancanti.")
+		return fail("Missing abilities.")
 	end
 	for _, ability in ipairs(AbilityConfig[classId]) do
 		local rank = raw.skillRanks[ability.id]
 		if not isInteger(rank, 0, AbilityConfig.MaxRank) then
-			return fail("Rango abilità non valido.")
+			return fail("Invalid ability rank.")
 		end
 		skillRanks[ability.id] = rank
 		spent += rank
@@ -111,36 +111,36 @@ local function copyHero(classId, raw)
 
 	local talents = {}
 	if type(raw.talents) ~= "table" then
-		return fail("Talenti mancanti.")
+		return fail("Missing talents.")
 	end
 	for _, talent in ipairs(HeroConfig.Talents) do
 		local rank = raw.talents[talent.id]
 		if not isInteger(rank, 0, talent.maxRank) then
-			return fail("Talento non valido.")
+			return fail("Invalid talent.")
 		end
 		talents[talent.id] = rank
 		spent += rank
 	end
 	if spent > raw.mastery then
-		return fail("Skill Point superiori alla Maestria.")
+		return fail("Skill Points exceed Mastery.")
 	end
 
 	local unlockedArenas = { ["1"] = true }
 	if type(raw.unlockedArenas) ~= "table" then
-		return fail("Arene mancanti.")
+		return fail("Missing arenas.")
 	end
 	for key, value in pairs(raw.unlockedArenas) do
 		local index = tonumber(key)
 		if value == true and index and index >= 1 and index <= 15 and index == math.floor(index) then
 			unlockedArenas[tostring(index)] = true
 		elseif value ~= false and value ~= true then
-			return fail("Sblocco arena non valido.")
+			return fail("Invalid arena unlock.")
 		end
 	end
 
 	local gear = { weapon = "", armor = "", charm = "" }
 	if type(raw.equippedGear) ~= "table" then
-		return fail("Equipaggiamento eroe non valido.")
+		return fail("Invalid hero equipment.")
 	end
 	for _, slot in ipairs({ "weapon", "armor", "charm" }) do
 		local uid = raw.equippedGear[slot]
@@ -149,7 +149,7 @@ local function copyHero(classId, raw)
 		elseif isId(uid, 64) then
 			gear[slot] = uid
 		else
-			return fail("Slot equipaggiamento non valido.")
+			return fail("Invalid equipment slot.")
 		end
 	end
 
@@ -168,25 +168,25 @@ end
 
 function ProfileSanitizer.Sanitize(raw)
 	if type(raw) ~= "table" then
-		return fail("Profilo non è una tabella.")
+		return fail("Profile is not a table.")
 	end
 	if raw.schemaVersion ~= ProfileTemplate.SchemaVersion then
-		return fail("Versione schema non supportata.")
+		return fail("Unsupported schema version.")
 	end
 	if not isInteger(raw.coins, 0, GameConfig.MaxCoins) then
-		return fail("Monete non valide.")
+		return fail("Invalid coins.")
 	end
 	if type(raw.firstHeroChosen) ~= "boolean" then
-		return fail("Scelta eroe non valida.")
+		return fail("Invalid hero choice.")
 	end
 	if type(raw.unlockedHeroes) ~= "table" then
-		return fail("Eroi sbloccati mancanti.")
+		return fail("Missing unlocked heroes.")
 	end
 
 	local unlocked = {}
 	for _, heroId in ipairs(HeroConfig.Order) do
 		if type(raw.unlockedHeroes[heroId]) ~= "boolean" then
-			return fail("Stato eroe non valido.")
+			return fail("Invalid hero state.")
 		end
 		unlocked[heroId] = raw.unlockedHeroes[heroId]
 	end
@@ -196,26 +196,26 @@ function ProfileSanitizer.Sanitize(raw)
 		selected = ""
 	end
 	if selected ~= "" and not HeroConfig.Classes[selected] then
-		return fail("Eroe selezionato sconosciuto.")
+		return fail("Unknown selected hero.")
 	end
 	if raw.firstHeroChosen then
 		if selected == "" or unlocked[selected] ~= true then
-			return fail("Eroe attivo non sbloccato.")
+			return fail("Active hero is not unlocked.")
 		end
 	elseif selected ~= "" then
-		return fail("Eroe selezionato prima della scelta iniziale.")
+		return fail("A hero is selected before the first choice.")
 	end
 
 	if not isInteger(raw.playTimeSeconds, 0, 2000000000) then
-		return fail("Tempo di gioco non valido.")
+		return fail("Invalid play time.")
 	end
 	if not isInteger(raw.totalKills, 0, 2000000000) then
-		return fail("Uccisioni non valide.")
+		return fail("Invalid kills.")
 	end
 
 	local heroes = {}
 	if type(raw.heroes) ~= "table" then
-		return fail("Dati eroi mancanti.")
+		return fail("Missing hero data.")
 	end
 	for _, heroId in ipairs(HeroConfig.Order) do
 		local hero, reason = copyHero(heroId, raw.heroes[heroId])
@@ -235,23 +235,23 @@ function ProfileSanitizer.Sanitize(raw)
 			quests[quest.id] = { progress = 0, completed = false }
 		else
 			if not isInteger(state.progress, 0, quest.goal) then
-				return fail("Progresso missione non valido.")
+				return fail("Invalid quest progress.")
 			end
 			if type(state.completed) ~= "boolean" then
-				return fail("Stato missione non valido.")
+				return fail("Invalid quest state.")
 			end
 			local completed = state.completed
 			if state.progress >= quest.goal then
 				completed = true
 			elseif completed and state.progress < quest.goal then
-				return fail("Missione completata senza progresso.")
+				return fail("Quest is complete without progress.")
 			end
 			quests[quest.id] = { progress = state.progress, completed = completed }
 		end
 	end
 
 	if type(raw.inventory) ~= "table" then
-		return fail("Inventario mancante.")
+		return fail("Missing inventory.")
 	end
 	local inventory = {
 		equipment = {},
@@ -261,32 +261,32 @@ function ProfileSanitizer.Sanitize(raw)
 	}
 	local seenUid = {}
 	if not isSequential(raw.inventory.equipment) then
-		return fail("Equipaggiamenti mancanti o non validi.")
+		return fail("Equipment list is missing or invalid.")
 	end
 	local equipCount = 0
 	for _, entry in ipairs(raw.inventory.equipment) do
 		equipCount += 1
 		if equipCount > GameConfig.Inventory.MaxEquipment then
-			return fail("Troppi equipaggiamenti.")
+			return fail("Too much equipment.")
 		end
 		if type(entry) ~= "table" or not isId(entry.uid, 64) or not isId(entry.itemId, 64) then
-			return fail("Equipaggiamento non valido.")
+			return fail("Invalid equipment.")
 		end
 		if seenUid[entry.uid] then
-			return fail("UID equipaggiamento duplicato.")
+			return fail("Duplicate equipment uid.")
 		end
 		local def = LootConfig.GetItem(entry.itemId)
 		if not def or def.category ~= "equipment" then
-			return fail("Oggetto equipaggiamento sconosciuto.")
+			return fail("Unknown equipment item.")
 		end
 		local bound = entry.boundHero
 		if bound == nil then
 			if def.classId ~= nil then
-				return fail("Equipaggiamento di classe senza eroe.")
+				return fail("Class equipment is missing a hero.")
 			end
 		else
 			if not HeroConfig.Classes[bound] or def.classId ~= bound then
-				return fail("Vincolo equipaggiamento non valido.")
+				return fail("Invalid equipment binding.")
 			end
 		end
 		seenUid[entry.uid] = true
@@ -299,15 +299,15 @@ function ProfileSanitizer.Sanitize(raw)
 
 	local function copyStack(source, target, category)
 		if type(source) ~= "table" then
-			return fail("Categoria inventario mancante: " .. category)
+			return fail("Missing inventory category: " .. category)
 		end
 		for itemId, count in pairs(source) do
 			if not isId(itemId, 64) or not isInteger(count, 1, GameConfig.Inventory.MaxStack) then
-				return fail("Stack non valido.")
+				return fail("Invalid stack.")
 			end
 			local def = LootConfig.GetItem(itemId)
 			if not def or def.category ~= category then
-				return fail("Oggetto stack sconosciuto.")
+				return fail("Unknown stacked item.")
 			end
 			target[itemId] = count
 		end
@@ -328,25 +328,25 @@ function ProfileSanitizer.Sanitize(raw)
 	end
 
 	if not isSequential(raw.pets) then
-		return fail("Pet mancanti o non validi.")
+		return fail("Pets are missing or invalid.")
 	end
 	local pets = {}
 	local petUids = {}
 	for _, pet in ipairs(raw.pets) do
 		if #pets >= GameConfig.Inventory.MaxPets then
-			return fail("Troppi Pet.")
+			return fail("Too many pets.")
 		end
 		if type(pet) ~= "table" or not isId(pet.uid, 64) or not isId(pet.petId, 64) then
-			return fail("Pet non valido.")
+			return fail("Invalid pet.")
 		end
 		if petUids[pet.uid] or seenUid[pet.uid] then
-			return fail("UID Pet duplicato.")
+			return fail("Duplicate pet uid.")
 		end
 		if not PetConfig.Get(pet.petId) then
-			return fail("Specie Pet sconosciuta.")
+			return fail("Unknown pet species.")
 		end
 		if not PetConfig.EvolutionMult[pet.evolution] then
-			return fail("Evoluzione Pet non valida.")
+			return fail("Invalid pet evolution.")
 		end
 		petUids[pet.uid] = true
 		table.insert(pets, {
@@ -357,7 +357,7 @@ function ProfileSanitizer.Sanitize(raw)
 	end
 
 	if not isSequential(raw.equippedPets) then
-		return fail("Pet equipaggiati mancanti o non validi.")
+		return fail("Equipped pets are missing or invalid.")
 	end
 	local equippedPets = { "", "", "" }
 	local usedPet = {}

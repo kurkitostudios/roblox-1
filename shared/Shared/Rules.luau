@@ -114,17 +114,17 @@ end
 
 function Rules.TrySpend(coins, amount)
 	if not Rules.IsFinite(amount) then
-		return false, coins, "Importo non valido."
+		return false, coins, "Invalid amount."
 	end
 	amount = math.floor(amount)
 	if amount < 0 then
-		return false, coins, "Importo non valido."
+		return false, coins, "Invalid amount."
 	end
 	if amount == 0 then
 		return true, coins, nil
 	end
 	if coins < amount then
-		return false, coins, "Monete insufficienti."
+		return false, coins, "Not enough coins."
 	end
 	return true, coins - amount, nil
 end
@@ -266,27 +266,27 @@ end
 
 function Rules.CanPurchaseArena(hero, arenaDef, coins)
 	if not arenaDef then
-		return false, "Arena inesistente."
+		return false, "Arena does not exist."
 	end
 	local key = tostring(arenaDef.index)
 	if hero.unlockedArenas[key] then
-		return false, "Arena già sbloccata."
+		return false, "Arena already unlocked."
 	end
 	if (hero.mastery or 0) < arenaDef.mastery then
-		return false, "Maestria insufficiente."
+		return false, "Mastery is too low."
 	end
 	if (coins or 0) < arenaDef.cost then
-		return false, "Monete insufficienti."
+		return false, "Not enough coins."
 	end
 	return true, nil
 end
 
 function Rules.SelectFirstHero(profile, heroId, valid)
 	if profile.firstHeroChosen then
-		return false, "La scelta iniziale è già stata confermata."
+		return false, "The first hero has already been chosen."
 	end
 	if not valid[heroId] then
-		return false, "Eroe non valido."
+		return false, "Invalid hero."
 	end
 	profile.firstHeroChosen = true
 	profile.selectedHero = heroId
@@ -296,13 +296,13 @@ end
 
 function Rules.SwitchHero(profile, heroId)
 	if profile.selectedHero == "" or profile.firstHeroChosen ~= true then
-		return false, "Scegli prima l'eroe iniziale."
+		return false, "Choose your first hero first."
 	end
 	if not profile.unlockedHeroes[heroId] then
-		return false, "Eroe bloccato."
+		return false, "Hero is locked."
 	end
 	if profile.selectedHero == heroId then
-		return false, "Eroe già attivo."
+		return false, "That hero is already active."
 	end
 	profile.selectedHero = heroId
 	return true, nil
@@ -314,20 +314,20 @@ end
 
 function Rules.SpendPoint(hero, kind, id, maxRank, unlocked)
 	if (hero.skillPoints or 0) < 1 then
-		return false, "Nessuno Skill Point."
+		return false, "No Skill Points."
 	end
 	local bucket = kind == "skill" and hero.skillRanks or hero.talents
 	if kind ~= "skill" and kind ~= "talent" then
-		return false, "Tipo non valido."
+		return false, "Invalid type."
 	end
 	if kind == "skill" and not unlocked then
-		return false, "Abilità ancora bloccata."
+		return false, "Ability is still locked."
 	end
 	if bucket[id] == nil then
-		return false, "Voce sconosciuta."
+		return false, "Unknown entry."
 	end
 	if bucket[id] >= maxRank then
-		return false, "Rango massimo."
+		return false, "Maximum rank."
 	end
 	bucket[id] += 1
 	hero.skillPoints -= 1
@@ -337,10 +337,10 @@ end
 function Rules.UpgradeStat(hero, statId, maxLevel)
 	local level = hero.stats[statId]
 	if level == nil then
-		return false, "Statistica non disponibile per questo eroe."
+		return false, "That stat is not available for this hero."
 	end
 	if level >= maxLevel then
-		return false, "Livello massimo."
+		return false, "Maximum level."
 	end
 	hero.stats[statId] = level + 1
 	return true, nil
@@ -348,15 +348,15 @@ end
 
 function Rules.CanRebirth(hero, maxMastery)
 	if not hero then
-		return false, "Eroe non valido."
+		return false, "Invalid hero."
 	end
 	if (hero.mastery or 0) < maxMastery then
-		return false, "Serve Maestria " .. tostring(maxMastery) .. "."
+		return false, "Requires Mastery " .. tostring(maxMastery) .. "."
 	end
 	return true, nil
 end
 
--- Reset dell'eroe. Non tocca monete, pet, materiali, pozioni, collezionabili,
+-- Reset dell'eroe. Non tocca Coins, pet, materiali, pozioni, collezionabili,
 -- eroi sbloccati o gli altri eroi. Gli oggetti con boundHero uguale all'eroe
 -- vengono rimossi. Gli oggetti senza boundHero restano nell'inventario.
 function Rules.ApplyRebirth(profile, heroId, statNames, skillIds, talentIds)
@@ -488,7 +488,7 @@ end
 
 function Rules.CanFuse(petList, equippedLookup, uids, required, nextEvolution)
 	if type(uids) ~= "table" or #uids ~= required then
-		return false, "Servono esattamente " .. tostring(required) .. " Pet."
+		return false, "Requires exactly " .. tostring(required) .. " pets."
 	end
 	local byUid = {}
 	for _, pet in petList do
@@ -499,26 +499,26 @@ function Rules.CanFuse(petList, equippedLookup, uids, required, nextEvolution)
 	local evolution = nil
 	for _, uid in uids do
 		if type(uid) ~= "string" or uid == "" or seen[uid] then
-			return false, "Pet duplicato o non valido."
+			return false, "Duplicate or invalid pet."
 		end
 		seen[uid] = true
 		if equippedLookup[uid] then
-			return false, "Togli i Pet equipaggiati prima di fonderli."
+			return false, "Unequip pets before fusing them."
 		end
 		local pet = byUid[uid]
 		if not pet then
-			return false, "Pet non posseduto."
+			return false, "You do not own that pet."
 		end
 		if not petId then
 			petId = pet.petId
 			evolution = pet.evolution
 		elseif pet.petId ~= petId or pet.evolution ~= evolution then
-			return false, "I Pet devono avere lo stesso id e la stessa evoluzione."
+			return false, "Pets must share the same id and evolution."
 		end
 	end
 	local evolved = nextEvolution(evolution)
 	if not evolved then
-		return false, "Questo Pet non può evolversi oltre."
+		return false, "This pet cannot evolve further."
 	end
 	return true, nil, { petId = petId, evolution = evolved }
 end
@@ -542,7 +542,7 @@ function Rules.ApplyFuse(petList, equippedLookup, uids, required, nextEvolution,
 		end
 	end
 	if removed ~= required then
-		return false, "Conteggio fusione non valido."
+		return false, "Invalid fusion count."
 	end
 	table.insert(nextList, {
 		uid = newUid,
@@ -592,16 +592,16 @@ end
 
 function Rules.AddStack(map, itemId, count, cap)
 	if type(itemId) ~= "string" or not Rules.IsFinite(count) or count == 0 then
-		return false, "Oggetto non valido."
+		return false, "Invalid item."
 	end
 	count = math.floor(count)
 	local current = map[itemId] or 0
 	local nextCount = current + count
 	if nextCount > cap then
-		return false, "Capacità raggiunta."
+		return false, "Capacity reached."
 	end
 	if nextCount < 0 then
-		return false, "Quantità insufficiente."
+		return false, "Not enough items."
 	end
 	if nextCount == 0 then
 		map[itemId] = nil

@@ -18,7 +18,7 @@ end
 
 function FusionService.Fuse(player, uids)
 	if not RuntimeState.TryLock(player, "fusion") then
-		return { ok = false, error = "Fusione già in corso." }
+		return { ok = false, error = "Fusion is already in progress." }
 	end
 	local function finish(result)
 		RuntimeState.Unlock(player, "fusion")
@@ -26,15 +26,15 @@ function FusionService.Fuse(player, uids)
 	end
 	local data = PlayerData.Get(player)
 	if not data then
-		return finish({ ok = false, error = "Dati non caricati." })
+		return finish({ ok = false, error = "Data is not loaded." })
 	end
 	local inLobby = HeroService.InLobby(player)
 	local atAltar = HeroService.Near(player, WorldLayout.Fusion(), WorldLayout.Radii.Fusion)
 	if not inLobby and not atAltar then
-		return finish({ ok = false, error = "Fondi i Pet dalla lobby o dall'altare di fusione." })
+		return finish({ ok = false, error = "Fuse pets in the lobby or at the fusion altar." })
 	end
 	if type(uids) ~= "table" then
-		return finish({ ok = false, error = "Selezione non valida." })
+		return finish({ ok = false, error = "Invalid selection." })
 	end
 	local list = {}
 	for _, uid in ipairs(uids) do
@@ -51,7 +51,7 @@ function FusionService.Fuse(player, uids)
 	PlayerData.Save(player, false)
 	local created = result[#result]
 	local pet = PetConfig.Get(created.petId)
-	Notifier.Send(player, "drop", "Fusione riuscita: " .. (pet and pet.name or created.petId) .. " " .. created.evolution)
+	Notifier.Send(player, "drop", "Fusion complete: " .. (pet and pet.name or created.petId) .. " " .. created.evolution)
 	HeroService.Refresh(player, false)
 	return finish({ ok = true, evolution = created.evolution, petId = created.petId })
 end

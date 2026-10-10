@@ -11,6 +11,7 @@ local AbilityConfig = shared("AbilityConfig")
 local Rules = shared("Rules")
 local WorldLayout = shared("WorldLayout")
 local GameConfig = shared("GameConfig")
+local Strings = shared("Strings")
 local PlayerData = require(script.Parent.PlayerDataService)
 local HeroService = require(script.Parent.HeroService)
 local RuntimeState = require(script.Parent.RuntimeState)
@@ -21,10 +22,10 @@ local RebirthService = {}
 local function ready(player)
 	local data = PlayerData.Get(player)
 	if not data or data.selectedHero == "" then
-		return nil, nil, "Seleziona un eroe."
+		return nil, nil, "Select a hero."
 	end
 	if not HeroService.Near(player, WorldLayout.Rebirth(), WorldLayout.Radii.Rebirth) then
-		return nil, nil, "Avvicinati all'altare del Rebirth."
+		return nil, nil, "Move closer to the Rebirth altar."
 	end
 	local hero = data.heroes[data.selectedHero]
 	local ok, reason = Rules.CanRebirth(hero, GameConfig.MaxMastery)
@@ -42,7 +43,7 @@ function RebirthService.Preview(player)
 	local runtime = RuntimeState.Get(player)
 	runtime.rebirthArmedUntil = os.clock() + 30
 	local heroId = data.selectedHero
-	Notifier.Send(player, "info", "Rebirth pronto per " .. HeroConfig.Classes[heroId].displayName .. ". Conferma entro 30 secondi.")
+	Notifier.Send(player, "info", "Rebirth ready for " .. HeroConfig.Classes[heroId].displayName .. ". Confirm within 30 seconds.")
 	return {
 		ok = true,
 		heroId = heroId,
@@ -52,7 +53,7 @@ end
 
 function RebirthService.Confirm(player)
 	if not RuntimeState.TryLock(player, "rebirth") then
-		return { ok = false, error = "Rebirth già in corso." }
+		return { ok = false, error = "Rebirth is already in progress." }
 	end
 	local function finish(result)
 		RuntimeState.Unlock(player, "rebirth")
@@ -64,7 +65,7 @@ function RebirthService.Confirm(player)
 	end
 	local runtime = RuntimeState.Get(player)
 	if os.clock() > (runtime.rebirthArmedUntil or 0) then
-		return finish({ ok = false, error = "Conferma scaduta. Prepara di nuovo il Rebirth." })
+		return finish({ ok = false, error = "Confirmation expired. Prepare Rebirth again." })
 	end
 	local heroId = data.selectedHero
 	local classDef = HeroConfig.Classes[heroId]
@@ -103,7 +104,7 @@ function RebirthService.Confirm(player)
 		root.AssemblyLinearVelocity = Vector3.zero
 	end
 	PlayerData.Save(player, false)
-	Notifier.Send(player, "quest", HeroConfig.Classes[heroId].displayName .. " ha completato un Rebirth. Bonus permanente: +" .. tostring(math.floor(data.heroes[heroId].rebirths * 10)) .. "% XP e monete.")
+	Notifier.Send(player, "rebirth", Strings.RebirthDone(HeroConfig.Classes[heroId].displayName, math.floor(data.heroes[heroId].rebirths * 10)))
 	return finish({ ok = true, rebirths = data.heroes[heroId].rebirths })
 end
 

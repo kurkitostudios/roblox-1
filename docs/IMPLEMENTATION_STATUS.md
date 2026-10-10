@@ -1,4 +1,4 @@
-# Stato — Build 001
+# Stato — Build 002
 
 Valori di danno, costi, curva XP, drop e bonus Pet sono **provvisori** e centralizzati in `shared/Shared/`. Le mesh sono parti Roblox generate da `WorldBuilder`, non asset artistici definitivi.
 
@@ -10,7 +10,7 @@ Nessun playtest in Roblox Studio è stato eseguito in questa consegna. Lo stato 
 - Configurazioni condivise: gioco, eroi, abilità, arene, nemici, loot, pozioni, Pet, missioni, remoti, layout del mondo.
 - Regole pure in `Rules.luau`: XP, monete, statistiche, eroi, Rebirth, drop, pozioni, fusione, missioni.
 - Dati giocatore: schema versione 1, default, sanitizer, session lock, retry, autosave, salvataggio in uscita e alla chiusura, niente sovrascrittura se il caricamento fallisce. In Studio, store separati; se le API sono spente, sessione solo in memoria.
-- Tre classi (Guerriero, Mago, Arciere) con statistiche, Maestria 0–50, +1 Skill Point per livello, scelta iniziale unica, cambio dalla lobby, progressi indipendenti, monete condivise.
+- Tre classi (Warrior, Mage, Archer) con statistiche, Mastery 0–50, +1 Skill Point per livello, scelta iniziale unica, cambio dalla lobby, progressi indipendenti, monete condivise. I nomi visibili sono inglesi. Gli id interni restano `Warrior`, `Mage`, `Archer`.
 - Due missioni di uccisioni che sbloccano gli eroi successivi. Lo sblocco resta dopo il Rebirth.
 - Potenziamenti statistiche e spesa Skill Point su talenti e abilità, con costi progressivi.
 - Mondo 1 idempotente: lobby, 15 arene chiuse con pad sicuro, percorso, zona uova a tre terrazze, tre classifiche con 9 podi, zone eroi / upgrade / fusione / Rebirth, portale Mondo 2 spento.
@@ -29,10 +29,12 @@ Nessun playtest in Roblox Studio è stato eseguito in questa consegna. Lo stato 
 
 ## Parziale
 
-- **Aspetto eroi.** Spada, armatura, cappello, arco e scie cambiano con i livelli, ma sono parti prototipo. I nemici non si voltano verso il bersaglio: restano in piedi con `AlignOrientation`.
+- **Aspetto.** Eroi, nemici, pet, lobby, arene e uova sono geometria procedurale (`HeroAppearance`, `CreatureKit`, `PropKit`). I livelli grafici usano `Rules.VisualTier` e non cambiano le statistiche. I nemici si orientano verso il bersaglio solo mentre inseguono o attaccano.
+- **Testi 3D.** `WorldTextConfig` limita nomi, cartelli, uova, podi e prompt. Il client sfuma i cartelli marcati ogni 0,3 secondi. La HUD non usa queste distanze.
+- **Lingua.** Il testo visibile al giocatore è inglese, centralizzato in `Strings` per la UI e per le notifiche principali. I commenti del codice possono restare in italiano.
 - **Podi.** Etichette e modelli ci sono. L'avatar reale dipende da `GetHumanoidDescriptionFromUserId`; se fallisce resta un blocco. Lo snapshot estetico è un DataStore separato.
 - **Classifiche.** Il codice c'è. Senza API Studio o senza giocatori restano vuote. Non vanno interrogate a ogni frame.
-- **Movimento nemici.** `Humanoid:MoveTo` in campo aperto. Non c'è pathfinding intorno ai muri. L'ingresso alle arene è un teletrasporto, non un varco camminabile.
+- **Movimento nemici.** `Humanoid:MoveTo` resta il movimento normale. Se restano bloccati, un piccolo scarto laterale e, più tardi, un percorso di `PathfindingService`. L'ingresso alle arene è ancora un teletrasporto.
 - **Bilanciamento.** Tutti i numeri sono provvisori.
 - **Materiali.** Si accumulano. Non esiste una forgia.
 - **UI.** Pensata per mouse e touch (`Activated`, altezza minima 44). Non è stata verificata su un dispositivo.
@@ -41,7 +43,7 @@ Nessun playtest in Roblox Studio è stato eseguito in questa consegna. Lo stato 
 
 - Mondo 2 giocabile. Il portale avvisa che è spento.
 - Acquisti Robux e Product ID.
-- Forgia, crafting, animazioni custom, asset 3D definitivi.
+- Forgia, crafting, animazioni importate, mesh esterne. Le animazioni di Build 002 sono procedurali (`TweenService` e `Motor6D.Transform` sul client).
 - Verifica runtime in Roblox Studio.
 
 ## Regole da non perdere

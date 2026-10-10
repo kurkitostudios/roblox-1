@@ -15,27 +15,27 @@ local PotionService = {}
 function PotionService.Use(player, potionId)
 	local data = PlayerData.Get(player)
 	if not data or data.selectedHero == "" then
-		return { ok = false, error = "Nessun eroe attivo." }
+		return { ok = false, error = "No active hero." }
 	end
 	if type(potionId) ~= "string" then
-		return { ok = false, error = "Pozione non valida." }
+		return { ok = false, error = "Invalid potion." }
 	end
 	local def = PotionConfig.Get(potionId)
 	if not def then
-		return { ok = false, error = "Pozione sconosciuta." }
+		return { ok = false, error = "Unknown potion." }
 	end
 	local count = data.inventory.potions[potionId] or 0
 	if count < 1 then
-		return { ok = false, error = "Non possiedi questa pozione." }
+		return { ok = false, error = "You do not own that potion." }
 	end
 	local removed = Rules.AddStack(data.inventory.potions, potionId, -1, GameConfig.Inventory.MaxStack)
 	if not removed then
-		return { ok = false, error = "Impossibile consumare la pozione." }
+		return { ok = false, error = "Could not use that potion." }
 	end
 	local runtime = RuntimeState.Get(player)
 	Rules.ApplyPotion(runtime.effects, def, os.clock())
 	PlayerData.MarkDirty(player, true)
-	Notifier.Send(player, "info", def.name .. " attiva per " .. tostring(def.duration) .. "s. Stessa famiglia: sostituisce, non si somma.")
+	Notifier.Send(player, "info", def.name .. " active for " .. tostring(def.duration) .. "s. Same family replaces the previous one.")
 	return { ok = true }
 end
 

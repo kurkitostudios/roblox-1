@@ -49,44 +49,44 @@ function RemotesService.Bind(ctx, name, limit, handler)
 	end
 	remote.OnServerInvoke = function(player, payload)
 		if typeof(player) ~= "Instance" or not player:IsA("Player") or player.Parent == nil then
-			return { ok = false, error = "Giocatore non valido." }
+			return { ok = false, error = "Invalid player." }
 		end
 		if payload ~= nil and type(payload) ~= "table" then
-			return { ok = false, error = "Richiesta non valida." }
+			return { ok = false, error = "Invalid request." }
 		end
 		if type(payload) == "table" then
 			local count = 0
 			for key, value in pairs(payload) do
 				count += 1
 				if count > 12 or type(key) ~= "string" then
-					return { ok = false, error = "Richiesta non valida." }
+					return { ok = false, error = "Invalid request." }
 				end
 				if type(value) == "table" then
 					local inner = 0
 					for innerKey, innerValue in pairs(value) do
 						inner += 1
 						if inner > 8 or (type(innerValue) ~= "string" and type(innerValue) ~= "number") then
-							return { ok = false, error = "Richiesta non valida." }
+							return { ok = false, error = "Invalid request." }
 						end
 						if type(innerKey) ~= "number" and type(innerKey) ~= "string" then
-							return { ok = false, error = "Richiesta non valida." }
+							return { ok = false, error = "Invalid request." }
 						end
 					end
 				elseif type(value) ~= "string" and type(value) ~= "number" and type(value) ~= "boolean" then
-					return { ok = false, error = "Richiesta non valida." }
+					return { ok = false, error = "Invalid request." }
 				end
 			end
 		end
 		if not RateLimiter.Allow(player, name, limit, 10) then
-			return { ok = false, error = "Troppe richieste. Attendi un momento." }
+			return { ok = false, error = "Too many requests. Wait a moment." }
 		end
 		local ok, result = xpcall(handler, debug.traceback, player, payload or {})
 		if not ok then
 			warn("[Kurkito] Errore remote " .. name .. ": " .. tostring(result))
-			return { ok = false, error = "Errore interno." }
+			return { ok = false, error = "Internal error." }
 		end
 		if type(result) ~= "table" then
-			return { ok = false, error = "Risposta non valida." }
+			return { ok = false, error = "Invalid response." }
 		end
 		return result
 	end

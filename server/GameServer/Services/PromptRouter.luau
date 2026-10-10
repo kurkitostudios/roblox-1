@@ -60,22 +60,22 @@ function PromptRouter.Start(ctx)
 				elseif action == "UpgradeInfo" then
 					local data = PlayerData.Get(player)
 					if not data or data.selectedHero == "" then
-						Notifier.Send(player, "info", "Scegli un eroe, poi apri il menu Potenziamenti.")
+						Notifier.Send(player, "info", "Choose a hero, then open the Upgrades menu.")
 					else
 						local statId = HeroConfig.Classes[data.selectedHero].stats[1]
 						local hero = data.heroes[data.selectedHero]
 						local cost = Rules.StatCost(hero.stats[statId], HeroConfig.StatDefs[statId])
-						Notifier.Send(player, "info", "Apri il menu Potenziamenti. Prossimo " .. statId .. ": " .. tostring(cost or "MAX") .. " monete.")
+						Notifier.Send(player, "info", "Open the Upgrades menu. Next " .. statId .. ": " .. tostring(cost or "MAX") .. " Coins.")
 					end
 				elseif action == "FusionInfo" then
-					Notifier.Send(player, "info", "Seleziona 5 Pet identici nel menu Fusione. I Pet equipaggiati vanno tolti prima.")
+					Notifier.Send(player, "info", "Select 5 identical pets in the Fusion menu. Unequip them first.")
 				elseif action == "Rebirth" then
 					local result = rebirth.Preview(player)
 					if not result.ok then
 						Notifier.Send(player, "error", result.error)
 					end
 				elseif action == "Portal" then
-					Notifier.Send(player, "info", "Il portale per il Mondo 2 non è attivo.")
+					Notifier.Send(player, "info", "The World 2 portal is not active.")
 				end
 			end)
 		end

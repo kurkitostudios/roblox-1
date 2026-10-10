@@ -230,10 +230,10 @@ function LeaderboardService.RefreshPodiums()
 			if podium then
 				local row = entries and entries[place]
 				if not row then
-					setLabel(podium, "—", ready and "" or "Dati non disponibili")
+					setLabel(podium, "—", ready and "" or "Data unavailable")
 				else
 					local userId = tonumber(row.key)
-					local name = "Giocatore " .. tostring(row.key)
+					local name = "Player " .. tostring(row.key)
 					if userId then
 						pcall(function()
 							name = Players:GetNameFromUserIdAsync(userId)

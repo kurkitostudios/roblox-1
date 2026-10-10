@@ -1,10 +1,10 @@
--- Bootstrap Build 001. Gli altri script di GameServer, come TestSync, restano indipendenti.
+-- Bootstrap Build 002. Gli altri script di GameServer, come TestSync, restano indipendenti.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 if _G.__KURKITO_SERVER_STARTED then
-	warn("[Kurkito] Bootstrap già avviato: seconda esecuzione ignorata.")
+	warn("[Kurkito] Bootstrap already running. Second start ignored.")
 	return
 end
 _G.__KURKITO_SERVER_STARTED = true
@@ -81,4 +81,4 @@ StudioCommands.Start()
 GameLoop.Start(ctx)
 PlayerDataService.HookPlayers()
 
-print("[Kurkito] Build 001 avviata. Mondo 1, 15 arene, combattimento automatico.")
+print("[Kurkito] Build 002 started. World 1, 15 arenas, automatic combat.")

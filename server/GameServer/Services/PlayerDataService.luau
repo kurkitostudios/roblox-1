@@ -82,7 +82,7 @@ local function pushNow(player)
 	if not session or not session.loaded then
 		remote:FireClient(player, {
 			ready = false,
-			error = session and session.error or "Dati non caricati.",
+			error = session and session.error or "Data is not loaded.",
 		})
 		return
 	end
@@ -199,7 +199,7 @@ local function claim(userId)
 end
 
 local function loadFromStore(userId)
-	local lastReason = "sconosciuto"
+	local lastReason = "unknown"
 	for _ = 1, GameConfig.Data.LoadRetries do
 		local blob, reason = claim(userId)
 		if blob then
@@ -320,7 +320,7 @@ local function onLoaded(player)
 	schedulePush(player, true)
 	local session = sessions[player]
 	if session and not session.persist then
-		ctx.services.Notifier.Send(player, "error", "Sessione di Studio solo in memoria. I dati di produzione non vengono toccati e questa partita non sarà salvata.")
+		ctx.services.Notifier.Send(player, "error", "Studio session is memory-only. Production data is untouched and this session will not be saved.")
 	end
 end
 
@@ -335,7 +335,7 @@ function PlayerDataService.LoadPlayer(player)
 		mutationGen = 0,
 		saving = false,
 		userId = player.UserId,
-		error = "Caricamento dati...",
+		error = "Loading data...",
 	}
 	sessions[player] = session
 	schedulePush(player, true)
@@ -359,7 +359,7 @@ function PlayerDataService.LoadPlayer(player)
 	else
 		session.loaded = false
 		session.persist = false
-		session.error = "Impossibile caricare i dati. Rientra tra poco. Nessun dato è stato sovrascritto."
+		session.error = "Could not load your data. Rejoin in a moment. Nothing was overwritten."
 		warnLog("Caricamento rifiutato per " .. player.Name .. ": " .. tostring(reason))
 	end
 	if player.Parent == nil then
