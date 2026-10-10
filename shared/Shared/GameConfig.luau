@@ -1,10 +1,10 @@
--- Kurkito Studios — Build 001
+-- Kurkito Studios — Build 002
 -- Configurazione globale. I valori di bilanciamento sono PROVVISORI.
 
 local GameConfig = {
 	BuildName = "Kurkito Battle Survival",
-	BuildVersion = "001",
-	WorldBuildId = "world1-build001",
+	BuildVersion = "002",
+	WorldBuildId = "world1-build002",
 
 	-- Loop AI e combattimento. Non usare un controllo per frame.
 	TickInterval = 0.2,
@@ -27,7 +27,7 @@ local GameConfig = {
 	},
 
 	Combat = {
-		-- HighestDamage: chi ha inflitto più danni ottiene kill, XP, monete e loot.
+		-- HighestDamage: chi ha inflitto più danni ottiene kill, XP, Coins e loot.
 		-- In parità vince l'ultimo colpo. LastHit: solo l'ultimo colpo.
 		KillCredit = "HighestDamage",
 		LeashSeconds = 5,

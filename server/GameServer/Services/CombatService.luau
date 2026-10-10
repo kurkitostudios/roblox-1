@@ -2,7 +2,6 @@
 -- Kill credit predefinito: chi ha inflitto più danni. In parità, l'ultimo colpo.
 -- Le abilità partono da sole, solo con un bersaglio valido e fuori dal cooldown.
 
-local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 
 local shared = require(script.Parent.SharedLoader)
@@ -19,6 +18,9 @@ local EconomyService = require(script.Parent.EconomyService)
 local LootService = require(script.Parent.LootService)
 local QuestService = require(script.Parent.QuestService)
 local Notifier = require(script.Parent.Notifier)
+local CombatFx = require(script.Parent.CombatFx)
+
+local sharedStrings = shared("Strings")
 
 local CombatService = {}
 
@@ -50,21 +52,6 @@ local function arenaAllowed(player, enemy)
 	end
 	local hero = data.heroes[data.selectedHero]
 	return hero.unlockedArenas[tostring(enemy.arenaIndex)] == true
-end
-
-local function burst(position, color, size, life)
-	local piece = Instance.new("Part")
-	piece.Anchored = true
-	piece.CanCollide = false
-	piece.CanQuery = false
-	piece.Material = Enum.Material.Neon
-	piece.Color = color
-	piece.Transparency = 0.35
-	piece.Size = size
-	piece.CFrame = CFrame.new(position)
-	piece.Parent = effectsFolder()
-	Debris:AddItem(piece, life or 0.35)
-	return piece
 end
 
 function CombatService.DamagePlayer(player, rawAmount)
@@ -128,8 +115,7 @@ function CombatService.GrantRewards(enemy)
 	end
 	QuestService.OnKill(player)
 	LootService.GrantEnemyDrops(player, enemy.def)
-	local text = "+" .. tostring(xp.applied) .. " XP  +" .. tostring(coins) .. " monete"
-	Notifier.Send(player, "xp", text)
+	Notifier.Send(player, "reward", sharedStrings.XpCoins(xp.applied, coins))
 end
 
 local function threatList(player, runtime, maxDistance)
@@ -228,15 +214,15 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 			runtime.mana += ability.mana or 0
 			return false
 		end
-		local ring = burst(root.Position, Color3.fromRGB(255, 170, 80), Vector3.new(ability.radius or 12, 0.4, ability.radius or 12), 0.3)
-		ring.Shape = Enum.PartType.Cylinder
-		ring.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, 0, math.rad(90))
+		CombatFx.MarkSwing(player, "Special")
+		CombatFx.Ring(root.Position, Color3.fromRGB(255, 170, 80), (ability.radius or 12) * 2, 0.3)
 	elseif kind == "projectile" then
 		local target = threats[1].enemy
 		if threats[1].distance > (ability.radius or stats.attackRange) then
 			runtime.mana += ability.mana or 0
 			return false
 		end
+		CombatFx.MarkSwing(player, "Special")
 		local orb = Instance.new("Part")
 		orb.Shape = Enum.PartType.Ball
 		orb.Size = Vector3.new(1.4, 1.4, 1.4)
@@ -244,8 +230,23 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 		orb.Color = Color3.fromRGB(255, 120, 40)
 		orb.Anchored = true
 		orb.CanCollide = false
+		orb.CanQuery = false
+		orb.CastShadow = false
 		orb.CFrame = CFrame.new(root.Position + Vector3.new(0, 1.5, 0))
 		orb.Parent = effectsFolder()
+		local trailA = Instance.new("Attachment")
+		trailA.Position = Vector3.new(0, 0.4, 0)
+		trailA.Parent = orb
+		local trailB = Instance.new("Attachment")
+		trailB.Position = Vector3.new(0, -0.4, 0)
+		trailB.Parent = orb
+		local ribbon = Instance.new("Trail")
+		ribbon.Attachment0 = trailA
+		ribbon.Attachment1 = trailB
+		ribbon.Lifetime = 0.2
+		ribbon.Color = ColorSequence.new(Color3.fromRGB(255, 140, 50))
+		ribbon.Transparency = NumberSequence.new(0.3)
+		ribbon.Parent = orb
 		table.insert(projectiles, {
 			player = player,
 			enemy = target,
@@ -263,7 +264,7 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 		end
 		runtime.buffs.defenseUntil = now + ability.duration
 		runtime.buffs.defenseReduction = math.clamp((ability.baseReduction or 0.2) + rank * (ability.perRank or 0), 0, 0.75)
-		burst(root.Position, Color3.fromRGB(160, 190, 220), Vector3.new(4, 4, 4), 0.25)
+		CombatFx.NamedAura(player.Character, "DefenseAura", Color3.fromRGB(160, 190, 220), Vector3.new(5.5, 6.5, 5.5))
 	elseif kind == "buff_damage" then
 		local remain = runtime.buffs.furyUntil - now
 		if remain > ability.duration * 0.3 then
@@ -272,7 +273,8 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 		end
 		runtime.buffs.furyUntil = now + ability.duration
 		runtime.buffs.furyBonus = (ability.baseBonus or 0.3) + rank * (ability.perRank or 0)
-		burst(root.Position, Color3.fromRGB(220, 60, 50), Vector3.new(3, 5, 3), 0.25)
+		CombatFx.NamedAura(player.Character, "FuryAura", Color3.fromRGB(220, 70, 48), Vector3.new(4.2, 5.2, 4.2))
+		CombatFx.MarkSwing(player, "Special")
 	elseif kind == "buff_shield" then
 		if runtime.shield > 15 then
 			runtime.mana += ability.mana or 0
@@ -280,7 +282,7 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 		end
 		runtime.shield = (ability.baseShield or 30) + rank * (ability.perRank or 0) + stats.damage * 0.4
 		runtime.shieldUntil = now + (ability.duration or 8)
-		burst(root.Position, Color3.fromRGB(90, 150, 255), Vector3.new(5, 5, 5), 0.3)
+		CombatFx.NamedAura(player.Character, "BarrierAura", Color3.fromRGB(90, 150, 255), Vector3.new(6, 6.5, 6))
 	elseif kind == "buff_hawk" then
 		local remain = runtime.buffs.hawkUntil - now
 		if remain > ability.duration * 0.3 then
@@ -290,7 +292,7 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 		runtime.buffs.hawkUntil = now + ability.duration
 		runtime.buffs.hawkBonus = (ability.baseBonus or 0.3) + rank * (ability.perRank or 0)
 		runtime.buffs.hawkRange = ability.rangeBonus or 8
-		burst(root.Position + Vector3.new(0, 3, 0), Color3.fromRGB(120, 220, 140), Vector3.new(1.2, 1.2, 1.2), 0.3)
+		CombatFx.Burst(root.Position + Vector3.new(0, 2.4, 0), Color3.fromRGB(120, 220, 140), Vector3.new(1.4, 1.4, 1.4), 0.3)
 	elseif kind == "multi_hit" then
 		local count = 0
 		local limit = ability.targets or 3
@@ -300,7 +302,7 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 			end
 			if entry.distance <= (ability.radius or stats.attackRange) then
 				EnemyService.Damage(entry.enemy, player, stats.damage * power)
-				burst(entry.enemy.root.Position, Color3.fromRGB(230, 230, 180), Vector3.new(0.4, 0.4, 2), 0.2)
+				CombatFx.BasicHit(player, "Archer", root.Position, entry.enemy.root.Position, Color3.fromRGB(230, 230, 180))
 				count += 1
 			end
 		end
@@ -338,7 +340,8 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 			runtime.mana += ability.mana or 0
 			return false
 		end
-		burst(aim, Color3.fromRGB(200, 230, 255), Vector3.new(0.5, 0.5, 6), 0.2)
+		CombatFx.BasicHit(player, "Archer", origin, aim, Color3.fromRGB(200, 230, 255))
+		CombatFx.MarkSwing(player, "Special")
 	else
 		runtime.mana += ability.mana or 0
 		return false
@@ -365,6 +368,7 @@ local function stepProjectiles()
 		if alpha >= 1 then
 			if shot.enemy and not shot.enemy.rewarded and shot.player and shot.player.Parent then
 				EnemyService.Damage(shot.enemy, shot.player, shot.damage)
+				CombatFx.Burst(targetPos + Vector3.new(0, 1.2, 0), Color3.fromRGB(255, 140, 50), Vector3.new(2.2, 2.2, 2.2), 0.28)
 			end
 			if shot.part then
 				shot.part:Destroy()
@@ -392,7 +396,7 @@ function CombatService.Tick(dt)
 				if #threats > 0 and now - runtime.lastAttack >= stats.attackInterval then
 					runtime.lastAttack = now
 					EnemyService.Damage(threats[1].enemy, player, stats.damage)
-					burst(threats[1].enemy.root.Position + Vector3.new(0, 1, 0), HeroConfig.Classes[data.selectedHero].color, Vector3.new(1.2, 0.3, 1.2), 0.15)
+					CombatFx.BasicHit(player, data.selectedHero, root.Position, threats[1].enemy.root.Position, HeroConfig.Classes[data.selectedHero].color)
 				end
 				local hero = data.heroes[data.selectedHero]
 				for _, ability in ipairs(AbilityConfig[data.selectedHero]) do

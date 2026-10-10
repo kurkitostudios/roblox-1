@@ -4,8 +4,8 @@
 local QuestConfig = {
 	{
 		id = "prova_del_ferro",
-		name = "Prova del Ferro",
-		description = "Sconfiggi 10 nemici. Sblocca il prossimo eroe.",
+		name = "Trial of Iron",
+		description = "Defeat 10 enemies. Unlocks the next hero.",
 		metric = "kills",
 		goal = 10,
 		coins = 150,
@@ -13,8 +13,8 @@ local QuestConfig = {
 	},
 	{
 		id = "cacciatore",
-		name = "Cacciatore",
-		description = "Sconfiggi 30 nemici. Sblocca il prossimo eroe ancora bloccato.",
+		name = "Hunter",
+		description = "Defeat 30 enemies. Unlocks the next hero that is still locked.",
 		metric = "kills",
 		goal = 30,
 		coins = 400,

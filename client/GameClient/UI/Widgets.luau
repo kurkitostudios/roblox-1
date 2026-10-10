@@ -65,6 +65,10 @@ function Widgets.Button(parent, text, callback)
 	button.Parent = parent
 	Widgets.Corner(button, 8)
 	Widgets.Stroke(button, Theme.gold, 1)
+	local gradient = Instance.new("UIGradient")
+	gradient.Rotation = 90
+	gradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(196, 186, 170))
+	gradient.Parent = button
 	if callback then
 		button.Activated:Connect(callback)
 	end

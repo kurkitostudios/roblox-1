@@ -7,13 +7,13 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local HeroConfig = require(Shared:WaitForChild("HeroConfig"))
 local AbilityConfig = require(Shared:WaitForChild("AbilityConfig"))
 local ArenaConfig = require(Shared:WaitForChild("ArenaConfig"))
-local GameConfig = require(Shared:WaitForChild("GameConfig"))
 local LootConfig = require(Shared:WaitForChild("LootConfig"))
 local PetConfig = require(Shared:WaitForChild("PetConfig"))
 local PotionConfig = require(Shared:WaitForChild("PotionConfig"))
 local QuestConfig = require(Shared:WaitForChild("QuestConfig"))
 local Rules = require(Shared:WaitForChild("Rules"))
 local Loadout = require(Shared:WaitForChild("Loadout"))
+local Strings = require(Shared:WaitForChild("Strings"))
 
 local Menus = {}
 
@@ -26,10 +26,6 @@ local openName
 local inventoryTab = "equipment"
 local fusionPick = {}
 local rebirthArmed = false
-
-local function profileOf(getProfile)
-	return getProfile()
-end
 
 local function effective(profile, heroOverride)
 	local heroId = profile.selectedHero
@@ -47,34 +43,36 @@ local function effective(profile, heroOverride)
 end
 
 local function statReadout(stats, statId)
+	local ui = Strings.UI
 	if statId == "HP" then
 		return math.floor(stats.maxHp + 0.5), "HP"
 	elseif statId == "DMG" then
-		return math.floor(stats.damage + 0.5), "danno"
+		return math.floor(stats.damage + 0.5), ui.DamageWord
 	elseif statId == "Speed" then
-		return math.floor(stats.walkSpeed * 10 + 0.5) / 10, "velocità"
+		return math.floor(stats.walkSpeed * 10 + 0.5) / 10, ui.SpeedWord
 	elseif statId == "Mana" then
-		return math.floor(stats.maxMana + 0.5), "mana"
+		return math.floor(stats.maxMana + 0.5), ui.ManaWord
 	elseif statId == "AttackSpeed" then
-		return math.floor(stats.attackInterval * 100 + 0.5) / 100, "intervallo"
+		return math.floor(stats.attackInterval * 100 + 0.5) / 100, ui.IntervalWord
 	end
 	return 0, ""
 end
 
 local function renderHeroes(profile)
+	local ui = Strings.UI
 	for _, heroId in ipairs(HeroConfig.Order) do
 		local classDef = HeroConfig.Classes[heroId]
 		local hero = profile.heroes[heroId]
 		local unlocked = profile.unlockedHeroes[heroId] == true
 		local active = profile.selectedHero == heroId
-		local header = active and " (attivo)" or ""
+		local header = active and ui.Active or ""
 		Widgets.Label(body, classDef.displayName .. header, UDim2.new(1, 0, 0, 22), true).TextColor3 = classDef.color:Lerp(Color3.new(1, 1, 1), 0.35)
 		if not unlocked then
-			Widgets.Label(body, "Bloccato. Completa le missioni per sbloccarlo in modo permanente.", UDim2.new(1, 0, 0, 36), false)
+			Widgets.Label(body, ui.LockedHero, UDim2.new(1, 0, 0, 36), false)
 		else
-			Widgets.Label(body, string.format("Maestria %d · Rebirth %d · Punti %d", hero.mastery, hero.rebirths, hero.skillPoints), UDim2.new(1, 0, 0, 20), false)
+			Widgets.Label(body, Strings.HeroLine(hero.mastery, hero.rebirths, hero.skillPoints), UDim2.new(1, 0, 0, 20), false)
 			if not active then
-				Widgets.Button(body, "Usa " .. classDef.displayName, function()
+				Widgets.Button(body, ui.UseHero .. classDef.displayName, function()
 					local result = invoke("SwitchHero", { heroId = heroId })
 					if not result.ok then
 						notify("error", result.error)
@@ -86,31 +84,32 @@ local function renderHeroes(profile)
 end
 
 local function renderUpgrades(profile)
+	local ui = Strings.UI
 	if profile.selectedHero == "" then
-		Widgets.Label(body, "Seleziona un eroe.", nil, false)
+		Widgets.Label(body, ui.ChooseHeroFirst, nil, false)
 		return
 	end
 	local hero = profile.heroes[profile.selectedHero]
 	local classDef = HeroConfig.Classes[profile.selectedHero]
 	local nowStats = effective(profile)
-	Widgets.Label(body, "Skill Point: " .. tostring(hero.skillPoints), nil, true)
+	Widgets.Label(body, ui.SkillPoints .. tostring(hero.skillPoints), nil, true)
 	for _, statId in ipairs(classDef.stats) do
 		local level = hero.stats[statId]
 		local statDef = HeroConfig.StatDefs[statId]
 		local currentValue, unit = statReadout(nowStats, statId)
 		local cost = Rules.StatCost(level, statDef)
-		local nextText = "Livello massimo"
+		local nextText = ui.MaxLevel
 		if cost then
 			local copy = Rules.DeepCopy(hero)
 			copy.stats[statId] += 1
 			local nextStats = effective(profile, copy)
 			local nextValue = statReadout(nextStats, statId)
-			nextText = string.format("Prossimo: %s (%+0.2f) · %s monete", tostring(nextValue), nextValue - currentValue, Rules.FormatNumber(cost))
+			nextText = Strings.NextStat(nextValue, nextValue - currentValue, Rules.FormatNumber(cost))
 		end
-		Widgets.Label(body, string.format("%s livello %d · effettivo %s %s", statDef.label, level, tostring(currentValue), unit), UDim2.new(1, 0, 0, 36), true)
+		Widgets.Label(body, Strings.StatLine(statDef.label, level, currentValue, unit), UDim2.new(1, 0, 0, 36), true)
 		Widgets.Label(body, nextText, UDim2.new(1, 0, 0, 32), false)
 		if cost then
-			Widgets.Button(body, "Upgrade " .. statDef.label, function()
+			Widgets.Button(body, ui.Upgrade .. statDef.label, function()
 				local result = invoke("UpgradeStat", { statId = statId })
 				if not result.ok then
 					notify("error", result.error)
@@ -118,12 +117,12 @@ local function renderUpgrades(profile)
 			end)
 		end
 	end
-	Widgets.Label(body, "Talenti", nil, true)
+	Widgets.Label(body, ui.Talents, nil, true)
 	for _, talent in ipairs(HeroConfig.Talents) do
 		local rank = hero.talents[talent.id] or 0
-		Widgets.Label(body, string.format("%s %d/%d — %s", talent.name, rank, talent.maxRank, talent.description), UDim2.new(1, 0, 0, 36), false)
+		Widgets.Label(body, Strings.TalentLine(talent.name, rank, talent.maxRank, talent.description), UDim2.new(1, 0, 0, 36), false)
 		if rank < talent.maxRank then
-			Widgets.Button(body, "Spendi punto: " .. talent.name, function()
+			Widgets.Button(body, ui.SpendPoint .. talent.name, function()
 				local result = invoke("SpendSkillPoint", { kind = "talent", id = talent.id })
 				if not result.ok then
 					notify("error", result.error)
@@ -131,15 +130,25 @@ local function renderUpgrades(profile)
 			end)
 		end
 	end
-	Widgets.Label(body, "Abilità", nil, true)
+	Widgets.Label(body, ui.AbilitiesInSkills, UDim2.new(1, 0, 0, 32), false).TextColor3 = Theme.muted
+end
+
+local function renderSkills(profile)
+	local ui = Strings.UI
+	if profile.selectedHero == "" then
+		Widgets.Label(body, ui.ChooseHeroFirst, nil, false)
+		return
+	end
+	local hero = profile.heroes[profile.selectedHero]
+	Widgets.Label(body, ui.SkillPoints .. tostring(hero.skillPoints), nil, true)
 	for _, ability in ipairs(AbilityConfig[profile.selectedHero]) do
 		local rank = hero.skillRanks[ability.id] or 0
 		local unlocked = Rules.AbilityUnlocked(hero.mastery, ability)
-		local state = unlocked and "sbloccata" or ("Maestria " .. ability.masteryRequired)
-		Widgets.Label(body, string.format("%s · rango %d/%d · %s", ability.name, rank, AbilityConfig.MaxRank, state), UDim2.new(1, 0, 0, 36), false)
+		local state = unlocked and ui.Unlocked or (ui.MasteryRequired .. ability.masteryRequired)
+		Widgets.Label(body, Strings.AbilityLine(ability.name, rank, AbilityConfig.MaxRank, state), UDim2.new(1, 0, 0, 36), false)
 		Widgets.Label(body, ability.description, UDim2.new(1, 0, 0, 20), false).TextColor3 = Theme.muted
 		if unlocked and rank < AbilityConfig.MaxRank then
-			Widgets.Button(body, "Potenzia " .. ability.name, function()
+			Widgets.Button(body, ui.Upgrade .. ability.name, function()
 				local result = invoke("SpendSkillPoint", { kind = "skill", id = ability.id })
 				if not result.ok then
 					notify("error", result.error)
@@ -155,11 +164,12 @@ local function itemName(itemId)
 end
 
 local function renderInventory(profile)
+	local ui = Strings.UI
 	local tabs = {
-		{ id = "equipment", label = "Equip" },
-		{ id = "materials", label = "Materiali" },
-		{ id = "potions", label = "Pozioni" },
-		{ id = "collectibles", label = "Reliquie" },
+		{ id = "equipment", label = ui.EquipTab },
+		{ id = "materials", label = ui.MaterialsTab },
+		{ id = "potions", label = ui.PotionsTab },
+		{ id = "collectibles", label = ui.RelicsTab },
 	}
 	local row = Instance.new("Frame")
 	row.BackgroundTransparency = 1
@@ -176,10 +186,11 @@ local function renderInventory(profile)
 	if inventoryTab == "equipment" then
 		local hero = profile.selectedHero ~= "" and profile.heroes[profile.selectedHero]
 		if hero then
-			Widgets.Label(body, string.format("Slot: arma %s · armatura %s · amuleto %s", hero.equippedGear.weapon ~= "" and "sì" or "no", hero.equippedGear.armor ~= "" and "sì" or "no", hero.equippedGear.charm ~= "" and "sì" or "no"), UDim2.new(1, 0, 0, 36), false)
+			Widgets.Label(body, Strings.GearSlots(hero.equippedGear.weapon ~= "", hero.equippedGear.armor ~= "", hero.equippedGear.charm ~= ""), UDim2.new(1, 0, 0, 36), false)
 			for _, slot in ipairs({ "weapon", "armor", "charm" }) do
 				if hero.equippedGear[slot] ~= "" then
-					Widgets.Button(body, "Togli " .. slot, function()
+					local slotName = slot == "weapon" and ui.Weapon or (slot == "armor" and ui.Armor or ui.Charm)
+					Widgets.Button(body, ui.Unequip .. slotName, function()
 						local result = invoke("UnequipItem", { slot = slot })
 						if not result.ok then
 							notify("error", result.error)
@@ -189,14 +200,14 @@ local function renderInventory(profile)
 			end
 		end
 		if #profile.inventory.equipment == 0 then
-			Widgets.Label(body, "Nessun equipaggiamento.", nil, false)
+			Widgets.Label(body, ui.NoGear, nil, false)
 		end
 		for _, entry in ipairs(profile.inventory.equipment) do
 			local def = LootConfig.GetItem(entry.itemId)
-			local bound = entry.boundHero and (" · " .. entry.boundHero) or " · condiviso"
+			local bound = entry.boundHero and (" · " .. entry.boundHero) or ui.SharedItem
 			Widgets.Label(body, itemName(entry.itemId) .. bound, UDim2.new(1, 0, 0, 22), true)
 			if def then
-				Widgets.Button(body, "Equipaggia " .. def.name, function()
+				Widgets.Button(body, ui.Equip .. def.name, function()
 					local result = invoke("EquipItem", { uid = entry.uid })
 					if not result.ok then
 						notify("error", result.error)
@@ -204,16 +215,21 @@ local function renderInventory(profile)
 				end)
 			end
 		end
-		Widgets.Label(body, "I materiali non hanno una forgia in questa build: restano nell'inventario.", UDim2.new(1, 0, 0, 40), false).TextColor3 = Theme.muted
+		Widgets.Label(body, ui.MaterialsNote, UDim2.new(1, 0, 0, 40), false).TextColor3 = Theme.muted
 	else
 		local bucket = profile.inventory[inventoryTab]
 		local any = false
 		for itemId, count in pairs(bucket) do
 			any = true
-			Widgets.Label(body, itemName(itemId) .. "  x" .. tostring(count), nil, false)
+			local def = LootConfig.GetItem(itemId)
+			local line = itemName(itemId) .. "  x" .. tostring(count)
+			Widgets.Label(body, line, nil, false)
+			if def and def.description then
+				Widgets.Label(body, def.description, UDim2.new(1, 0, 0, 28), false).TextColor3 = Theme.muted
+			end
 		end
 		if not any then
-			Widgets.Label(body, "Categoria vuota.", nil, false)
+			Widgets.Label(body, ui.EmptyCategory, nil, false)
 		end
 	end
 end
@@ -224,20 +240,21 @@ local function petLabel(pet)
 end
 
 local function renderPets(profile)
-	Widgets.Label(body, "Massimo 3 Pet equipaggiati. L'inventario è condiviso e sopravvive al Rebirth.", UDim2.new(1, 0, 0, 40), false)
+	local ui = Strings.UI
+	Widgets.Label(body, ui.PetLimit, UDim2.new(1, 0, 0, 40), false)
 	for slot = 1, 3 do
 		local uid = profile.equippedPets[slot]
-		local text = "Slot " .. slot .. ": vuoto"
+		local text = string.format(ui.EmptySlot, slot)
 		if uid ~= "" then
 			for _, pet in ipairs(profile.pets) do
 				if pet.uid == uid then
-					text = "Slot " .. slot .. ": " .. petLabel(pet)
+					text = string.format(ui.FilledSlot, slot, petLabel(pet))
 				end
 			end
 		end
 		Widgets.Label(body, text, UDim2.new(1, 0, 0, 22), true)
 		if uid ~= "" then
-			Widgets.Button(body, "Togli slot " .. slot, function()
+			Widgets.Button(body, ui.ClearSlot .. slot, function()
 				local result = invoke("UnequipPet", { slot = slot })
 				if not result.ok then
 					notify("error", result.error)
@@ -246,11 +263,11 @@ local function renderPets(profile)
 		end
 	end
 	if #profile.pets == 0 then
-		Widgets.Label(body, "Nessun Pet. Le uova sono nella zona a sud della lobby.", nil, false)
+		Widgets.Label(body, ui.NoPets, nil, false)
 	end
 	for _, pet in ipairs(profile.pets) do
 		Widgets.Label(body, petLabel(pet), UDim2.new(1, 0, 0, 22), false)
-		Widgets.Button(body, "Equipaggia", function()
+		Widgets.Button(body, ui.EquipPet, function()
 			local result = invoke("EquipPet", { uid = pet.uid })
 			if not result.ok then
 				notify("error", result.error)
@@ -260,7 +277,8 @@ local function renderPets(profile)
 end
 
 local function renderFusion(profile)
-	Widgets.Label(body, "5 Pet con lo stesso id e la stessa evoluzione diventano 1 del livello successivo. I Pet equipaggiati non si possono fondere.", UDim2.new(1, 0, 0, 56), false)
+	local ui = Strings.UI
+	Widgets.Label(body, ui.FusionRule, UDim2.new(1, 0, 0, 56), false)
 	local selected = {}
 	local still = {}
 	for _, uid in ipairs(fusionPick) do
@@ -281,15 +299,12 @@ local function renderFusion(profile)
 			end
 		end
 		local nextEvo = PetConfig.NextEvolution(first.evolution)
-		local preview = same and nextEvo and ("Anteprima: " .. petLabel(first) .. " → " .. nextEvo) or "I Pet selezionati non sono identici."
-		if #selected ~= 5 then
-			preview = "Selezionati " .. tostring(#selected) .. "/5. " .. preview
-		end
-		Widgets.Label(body, preview, UDim2.new(1, 0, 0, 48), true)
+		local preview = same and nextEvo and ("Preview: " .. petLabel(first) .. " → " .. nextEvo) or ui.NotIdentical
+		Widgets.Label(body, Strings.FusionPreview(#selected, preview), UDim2.new(1, 0, 0, 48), true)
 	else
-		Widgets.Label(body, "Nessun Pet selezionato.", nil, false)
+		Widgets.Label(body, ui.NoFusionPick, nil, false)
 	end
-	Widgets.Button(body, "Conferma fusione", function()
+	Widgets.Button(body, ui.ConfirmFusion, function()
 		local result = invoke("FusePets", { uids = fusionPick })
 		if result.ok then
 			fusionPick = {}
@@ -297,7 +312,7 @@ local function renderFusion(profile)
 			notify("error", result.error)
 		end
 	end)
-	Widgets.Button(body, "Azzera selezione", function()
+	Widgets.Button(body, ui.ClearFusion, function()
 		fusionPick = {}
 		Menus.Refresh()
 	end)
@@ -320,7 +335,7 @@ local function renderFusion(profile)
 			end
 			if not removed then
 				if #nextPick >= 5 then
-					notify("error", "Puoi selezionare solo 5 Pet.")
+					notify("error", Strings.Error.OnlyFivePets)
 				else
 					table.insert(nextPick, pet.uid)
 				end
@@ -332,13 +347,17 @@ local function renderFusion(profile)
 end
 
 local function renderPotions(profile)
-	Widgets.Label(body, "Due pozioni della stessa famiglia non si sommano: la nuova sostituisce durata e potenza.", UDim2.new(1, 0, 0, 40), false)
+	local ui = Strings.UI
+	Widgets.Label(body, ui.PotionRule, UDim2.new(1, 0, 0, 40), false)
 	local any = false
 	for potionId, count in pairs(profile.inventory.potions) do
 		any = true
 		local def = PotionConfig.Get(potionId)
 		Widgets.Label(body, (def and def.name or potionId) .. "  x" .. tostring(count), nil, true)
-		Widgets.Button(body, "Usa", function()
+		if def and def.description then
+			Widgets.Label(body, def.description, UDim2.new(1, 0, 0, 32), false).TextColor3 = Theme.muted
+		end
+		Widgets.Button(body, ui.Use, function()
 			local result = invoke("UsePotion", { potionId = potionId })
 			if not result.ok then
 				notify("error", result.error)
@@ -346,26 +365,27 @@ local function renderPotions(profile)
 		end)
 	end
 	if not any then
-		Widgets.Label(body, "Nessuna pozione.", nil, false)
+		Widgets.Label(body, ui.NoPotions, nil, false)
 	end
 end
 
 local function renderRebirth(profile)
+	local ui = Strings.UI
 	if profile.selectedHero == "" then
-		Widgets.Label(body, "Seleziona un eroe.", nil, false)
+		Widgets.Label(body, ui.ChooseHeroFirst, nil, false)
 		return
 	end
 	local hero = profile.heroes[profile.selectedHero]
 	local classDef = HeroConfig.Classes[profile.selectedHero]
-	Widgets.Label(body, classDef.displayName .. " · Maestria " .. tostring(hero.mastery) .. " · Rebirth " .. tostring(hero.rebirths), UDim2.new(1, 0, 0, 28), true)
-	Widgets.Label(body, "Disponibile a Maestria 50, solo all'altare a est. Ogni Rebirth dà +10% XP e +10% monete permanenti a questo eroe.", UDim2.new(1, 0, 0, 56), false)
-	Widgets.Label(body, "Si azzerano: Maestria, XP, statistiche, Skill Point, talenti, abilità, arene e gli equipaggiamenti vincolati a questo eroe.", UDim2.new(1, 0, 0, 56), false)
-	Widgets.Label(body, "Restano: monete, Pet, materiali, pozioni, collezionabili, eroi sbloccati, gli altri eroi e gli oggetti senza vincolo di eroe.", UDim2.new(1, 0, 0, 56), false)
-	Widgets.Button(body, "Prepara Rebirth", function()
+	Widgets.Label(body, Strings.RebirthSummary(classDef.displayName, hero.mastery, hero.rebirths), UDim2.new(1, 0, 0, 28), true)
+	Widgets.Label(body, ui.RebirthAvailable, UDim2.new(1, 0, 0, 56), false)
+	Widgets.Label(body, ui.RebirthLost, UDim2.new(1, 0, 0, 56), false)
+	Widgets.Label(body, ui.RebirthKept, UDim2.new(1, 0, 0, 56), false)
+	Widgets.Button(body, ui.PrepareRebirth, function()
 		local result = invoke("Rebirth", { step = "preview" })
 		if result.ok then
 			rebirthArmed = true
-			notify("info", "Conferma entro 30 secondi.")
+			notify("info", ui.ConfirmWindow)
 			Menus.Refresh()
 			rebirthArmed = true
 		else
@@ -373,7 +393,7 @@ local function renderRebirth(profile)
 		end
 	end)
 	if rebirthArmed then
-		Widgets.Button(body, "Conferma Rebirth", function()
+		Widgets.Button(body, ui.ConfirmRebirth, function()
 			local result = invoke("Rebirth", { step = "confirm" })
 			rebirthArmed = false
 			if not result.ok then
@@ -384,9 +404,10 @@ local function renderRebirth(profile)
 end
 
 local function renderArenas(profile)
+	local ui = Strings.UI
 	local hero = profile.selectedHero ~= "" and profile.heroes[profile.selectedHero]
-	Widgets.Label(body, "L'accesso è dell'eroe attivo. Servono Maestria e pagamento. Il Mondo 2 non ha un portale funzionante.", UDim2.new(1, 0, 0, 48), false)
-	Widgets.Button(body, "Torna in lobby", function()
+	Widgets.Label(body, ui.ArenaIntro, UDim2.new(1, 0, 0, 48), false)
+	Widgets.Button(body, ui.ReturnLobby, function()
 		local result = invoke("Teleport", { destination = "lobby" })
 		if not result.ok then
 			notify("error", result.error)
@@ -397,17 +418,17 @@ local function renderArenas(profile)
 	end
 	for _, arena in ipairs(ArenaConfig) do
 		local unlocked = hero.unlockedArenas[tostring(arena.index)] == true
-		local cost = arena.cost > 0 and (Rules.FormatNumber(arena.cost) .. " monete") or "gratis"
-		Widgets.Label(body, string.format("%d. %s · Maestria %d · %s%s", arena.index, arena.name, arena.mastery, cost, unlocked and " · aperta" or ""), UDim2.new(1, 0, 0, 36), true)
+		local cost = arena.cost > 0 and Strings.Coins(Rules.FormatNumber(arena.cost)) or Strings.Free()
+		Widgets.Label(body, Strings.ArenaRow(arena.index, arena.name, arena.mastery, cost, unlocked), UDim2.new(1, 0, 0, 36), true)
 		if unlocked then
-			Widgets.Button(body, "Entra nell'arena " .. arena.index, function()
+			Widgets.Button(body, ui.EnterArena .. arena.index, function()
 				local result = invoke("Teleport", { arenaIndex = arena.index })
 				if not result.ok then
 					notify("error", result.error)
 				end
 			end)
 		else
-			Widgets.Button(body, "Sblocca arena " .. arena.index, function()
+			Widgets.Button(body, ui.UnlockArena .. arena.index, function()
 				local result = invoke("UnlockArena", { arenaIndex = arena.index })
 				if not result.ok then
 					notify("error", result.error)
@@ -418,22 +439,24 @@ local function renderArenas(profile)
 end
 
 local function renderQuests(profile)
+	local ui = Strings.UI
 	for _, quest in ipairs(QuestConfig) do
 		local state = profile.quests[quest.id] or { progress = 0, completed = false }
-		local status = state.completed and "Completata" or (tostring(state.progress) .. "/" .. tostring(quest.goal))
+		local status = state.completed and ui.Completed or (tostring(state.progress) .. "/" .. tostring(quest.goal))
 		Widgets.Label(body, quest.name .. " · " .. status, nil, true)
 		Widgets.Label(body, quest.description, UDim2.new(1, 0, 0, 36), false)
 	end
 end
 
 local function renderEggs(profile)
+	local ui = Strings.UI
 	local hero = profile.selectedHero ~= "" and profile.heroes[profile.selectedHero]
-	Widgets.Label(body, "Apri le uova normali vicino al modello, con l'arena sbloccata. Le uova Robux sono solo vetrine.", UDim2.new(1, 0, 0, 48), false)
+	Widgets.Label(body, ui.EggIntro, UDim2.new(1, 0, 0, 48), false)
 	for index = 1, 15 do
 		local egg = PetConfig.GetEgg(index)
 		local open = hero and hero.unlockedArenas[tostring(index)] == true
-		Widgets.Label(body, egg.name .. " · " .. Rules.FormatNumber(egg.cost) .. " monete" .. (open and "" or " · arena bloccata"), UDim2.new(1, 0, 0, 32), true)
-		Widgets.Button(body, "Apri uovo " .. index, function()
+		Widgets.Label(body, Strings.EggRow(egg.name, Strings.Coins(Rules.FormatNumber(egg.cost)), not open), UDim2.new(1, 0, 0, 32), true)
+		Widgets.Button(body, ui.OpenEgg .. index, function()
 			local result = invoke("OpenEgg", { arenaIndex = index })
 			if not result.ok then
 				notify("error", result.error)
@@ -441,10 +464,10 @@ local function renderEggs(profile)
 		end)
 	end
 	for specialIndex, egg in ipairs(PetConfig.SpecialEggs) do
-		Widgets.Label(body, egg.name .. " · non acquistabile", nil, true).TextColor3 = Theme.gold
-		Widgets.Button(body, "Mostra probabilità (nessun acquisto)", function()
+		Widgets.Label(body, egg.name .. ui.NotForSale, nil, true).TextColor3 = Theme.gold
+		Widgets.Button(body, ui.ShowOdds, function()
 			local result = invoke("OpenEgg", { kind = "robux", specialIndex = specialIndex })
-			notify("info", result.error or "Nessun acquisto effettuato.")
+			notify("info", result.error or ui.NoPurchase)
 			if result.odds then
 				notify("info", result.odds)
 			end
@@ -453,16 +476,17 @@ local function renderEggs(profile)
 end
 
 local PAGES = {
-	{ id = "heroes", title = "Eroi", render = renderHeroes },
-	{ id = "upgrades", title = "Potenziamenti", render = renderUpgrades },
-	{ id = "inventory", title = "Inventario", render = renderInventory },
-	{ id = "pets", title = "Pet", render = renderPets },
-	{ id = "fusion", title = "Fusione", render = renderFusion },
-	{ id = "potions", title = "Pozioni", render = renderPotions },
-	{ id = "rebirth", title = "Rebirth", render = renderRebirth },
-	{ id = "arenas", title = "Arene", render = renderArenas },
-	{ id = "quests", title = "Missioni", render = renderQuests },
-	{ id = "eggs", title = "Uova", render = renderEggs },
+	{ id = "heroes", title = Strings.UI.Heroes, render = renderHeroes },
+	{ id = "upgrades", title = Strings.UI.Upgrades, render = renderUpgrades },
+	{ id = "inventory", title = Strings.UI.Inventory, render = renderInventory },
+	{ id = "pets", title = Strings.UI.Pets, render = renderPets },
+	{ id = "skills", title = Strings.UI.Skills, render = renderSkills },
+	{ id = "potions", title = Strings.UI.Potions, render = renderPotions },
+	{ id = "rebirth", title = Strings.UI.Rebirth, render = renderRebirth },
+	{ id = "quests", title = Strings.UI.Quests, render = renderQuests },
+	{ id = "arenas", title = Strings.UI.Arenas, render = renderArenas },
+	{ id = "fusion", title = Strings.UI.Fusion, render = renderFusion },
+	{ id = "eggs", title = Strings.UI.Eggs, render = renderEggs },
 }
 
 function Menus.Refresh()
@@ -472,11 +496,11 @@ function Menus.Refresh()
 	local profile = Menus.GetProfile and Menus.GetProfile() or nil
 	Widgets.Clear(body)
 	if not profile then
-		Widgets.Label(body, "Caricamento dati...", nil, false)
+		Widgets.Label(body, Strings.UI.Loading, nil, false)
 		return
 	end
 	if profile.selectedHero == "" and openName ~= "heroes" and openName ~= "quests" then
-		Widgets.Label(body, "Scegli prima un eroe.", nil, false)
+		Widgets.Label(body, Strings.UI.ChooseHeroFirst, nil, false)
 		return
 	end
 	for _, page in ipairs(PAGES) do
@@ -498,7 +522,7 @@ function Menus.Mount(parent, invoker, notifier, getProfile)
 	bar.Position = UDim2.new(0.5, 0, 1, -8)
 	bar.Size = UDim2.new(1, -16, 0, 52)
 	bar.BackgroundColor3 = Theme.bg
-	bar.BackgroundTransparency = 0.2
+	bar.BackgroundTransparency = 0.15
 	bar.BorderSizePixel = 0
 	bar.ScrollBarThickness = 4
 	bar.ScrollingDirection = Enum.ScrollingDirection.X
@@ -513,21 +537,21 @@ function Menus.Mount(parent, invoker, notifier, getProfile)
 	shell = Instance.new("Frame")
 	shell.Name = "Panel"
 	shell.AnchorPoint = Vector2.new(0.5, 0.5)
-	shell.Position = UDim2.fromScale(0.5, 0.46)
-	shell.Size = UDim2.fromScale(0.94, 0.72)
+	shell.Position = UDim2.fromScale(0.5, 0.42)
+	shell.Size = UDim2.fromScale(0.92, 0.62)
 	shell.BackgroundColor3 = Theme.panel
 	shell.Visible = false
 	shell.Parent = parent
 	Widgets.Corner(shell, 14)
 	Widgets.Stroke(shell, Theme.gold, 1.4)
 	local cap = Instance.new("UISizeConstraint")
-	cap.MaxSize = Vector2.new(760, 680)
+	cap.MaxSize = Vector2.new(720, 560)
 	cap.Parent = shell
 
 	title = Widgets.Label(shell, "", UDim2.new(1, -120, 0, 36), true)
 	title.Position = UDim2.fromOffset(16, 10)
 	title.TextSize = 20
-	local close = Widgets.Button(shell, "Chiudi", function()
+	local close = Widgets.Button(shell, Strings.UI.Close, function()
 		shell.Visible = false
 		openName = nil
 	end)
@@ -553,7 +577,7 @@ function Menus.Mount(parent, invoker, notifier, getProfile)
 			end
 			Menus.Refresh()
 		end)
-		button.Size = UDim2.fromOffset(118, 36)
+		button.Size = UDim2.fromOffset(108, 36)
 	end
 end
 

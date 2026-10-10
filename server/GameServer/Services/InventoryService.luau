@@ -31,7 +31,7 @@ function InventoryService.Grant(player, grants, boundHero)
 		if def then
 			if def.category == "equipment" then
 				if #data.inventory.equipment >= GameConfig.Inventory.MaxEquipment then
-					Notifier.Send(player, "error", "Inventario equipaggiamenti pieno.")
+					Notifier.Send(player, "error", "Equipment inventory is full.")
 				else
 					local entry = {
 						uid = HttpService:GenerateGUID(false),
@@ -53,7 +53,7 @@ function InventoryService.Grant(player, grants, boundHero)
 					if ok then
 						table.insert(accepted, { name = def.name, count = grant.count or 1 })
 					else
-						Notifier.Send(player, "error", reason or "Inventario pieno.")
+						Notifier.Send(player, "error", reason or "Inventory is full.")
 					end
 				end
 			end
@@ -68,24 +68,24 @@ end
 function InventoryService.Equip(player, uid)
 	local data = PlayerData.Get(player)
 	if not data or data.selectedHero == "" then
-		return { ok = false, error = "Nessun eroe attivo." }
+		return { ok = false, error = "No active hero." }
 	end
 	if type(uid) ~= "string" then
-		return { ok = false, error = "Oggetto non valido." }
+		return { ok = false, error = "Invalid item." }
 	end
 	local entry = findEquipment(data, uid)
 	if not entry then
-		return { ok = false, error = "Oggetto non posseduto." }
+		return { ok = false, error = "You do not own that item." }
 	end
 	local def = LootConfig.GetItem(entry.itemId)
 	if not def or not slots[def.slot] then
-		return { ok = false, error = "Non equipaggiabile." }
+		return { ok = false, error = "That item cannot be equipped." }
 	end
 	if def.classId and def.classId ~= data.selectedHero then
-		return { ok = false, error = "Questo oggetto appartiene a un'altra classe." }
+		return { ok = false, error = "That item belongs to another class." }
 	end
 	if entry.boundHero and entry.boundHero ~= data.selectedHero then
-		return { ok = false, error = "Questo oggetto è vincolato a un altro eroe." }
+		return { ok = false, error = "That item is bound to another hero." }
 	end
 	for _, hero in pairs(data.heroes) do
 		for slot, equipped in pairs(hero.equippedGear) do
@@ -98,17 +98,17 @@ function InventoryService.Equip(player, uid)
 	PlayerData.MarkDirty(player, true)
 	local heroService = require(script.Parent.HeroService)
 	heroService.Refresh(player, false)
-	Notifier.Send(player, "info", "Equipaggiato: " .. def.name)
+	Notifier.Send(player, "info", "Equipped: " .. def.name)
 	return { ok = true }
 end
 
 function InventoryService.Unequip(player, slot)
 	local data = PlayerData.Get(player)
 	if not data or data.selectedHero == "" then
-		return { ok = false, error = "Nessun eroe attivo." }
+		return { ok = false, error = "No active hero." }
 	end
 	if not slots[slot] then
-		return { ok = false, error = "Slot non valido." }
+		return { ok = false, error = "Invalid slot." }
 	end
 	data.heroes[data.selectedHero].equippedGear[slot] = ""
 	PlayerData.MarkDirty(player, true)

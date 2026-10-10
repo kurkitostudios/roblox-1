@@ -1,6 +1,7 @@
 local shared = require(script.Parent.SharedLoader)
 local ArenaConfig = shared("ArenaConfig")
 local Rules = shared("Rules")
+local Strings = shared("Strings")
 local WorldLayout = shared("WorldLayout")
 local PlayerData = require(script.Parent.PlayerDataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -13,7 +14,7 @@ local ArenaService = {}
 local function heroOf(player)
 	local data = PlayerData.Get(player)
 	if not data or data.selectedHero == "" then
-		return nil, nil, "Seleziona un eroe."
+		return nil, nil, "Select a hero."
 	end
 	return data, data.heroes[data.selectedHero], nil
 end
@@ -80,12 +81,12 @@ end
 function ArenaService.Unlock(player, arenaIndex)
 	local arena = ArenaConfig.Get(arenaIndex)
 	if not arena then
-		return { ok = false, error = "Arena inesistente." }
+		return { ok = false, error = "Arena does not exist." }
 	end
 	local position = HeroService.Position(player)
 	local nearGate = position and WorldLayout.Near(position, WorldLayout.ArenaGate(arena.index), WorldLayout.Radii.ArenaPad + 8)
 	if not nearGate and not HeroService.InLobby(player) then
-		return { ok = false, error = "Sblocca l'arena dal cancello o dalla lobby." }
+		return { ok = false, error = "Unlock the arena at its gate or from the lobby." }
 	end
 	local data, hero, reason = heroOf(player)
 	if not hero then
@@ -104,43 +105,43 @@ function ArenaService.Unlock(player, arenaIndex)
 	hero.unlockedArenas[tostring(arena.index)] = true
 	PlayerData.MarkDirty(player, true)
 	PlayerData.Save(player, false)
-	Notifier.Send(player, "info", "Arena sbloccata: " .. arena.name)
+	Notifier.Send(player, "arena", Strings.ArenaUnlocked(arena.name))
 	return { ok = true }
 end
 
 function ArenaService.TeleportToArena(player, arenaIndex)
 	if not ArenaService.CanTravel(player) then
-		return { ok = false, error = "Teletrasporto disponibile da lobby, cancelli o arene." }
+		return { ok = false, error = "Travel is available from the lobby, gates, or arenas." }
 	end
 	local arena = ArenaConfig.Get(arenaIndex)
 	if not arena then
-		return { ok = false, error = "Arena inesistente." }
+		return { ok = false, error = "Arena does not exist." }
 	end
 	local _, hero, reason = heroOf(player)
 	if not hero then
 		return { ok = false, error = reason }
 	end
 	if not hero.unlockedArenas[tostring(arena.index)] then
-		return { ok = false, error = "Arena bloccata per questo eroe." }
+		return { ok = false, error = "Arena locked for this hero." }
 	end
 	local spawn = spawnFor(arena.index)
 	local ok = teleport(player, WorldLayout.ArenaEntry(arena.index), spawn)
 	if not ok then
-		return { ok = false, error = "Personaggio non pronto." }
+		return { ok = false, error = "Character is not ready." }
 	end
 	return { ok = true }
 end
 
 function ArenaService.TeleportLobby(player)
 	if not ArenaService.CanTravel(player) and not HeroService.InLobby(player) then
-		return { ok = false, error = "Non puoi tornare in lobby da qui." }
+		return { ok = false, error = "You cannot return to the lobby from here." }
 	end
 	if not PlayerData.IsLoaded(player) then
-		return { ok = false, error = "Dati non caricati." }
+		return { ok = false, error = "Data is not loaded." }
 	end
 	local ok = teleport(player, WorldLayout.LobbySpawn(), lobbySpawn())
 	if not ok then
-		return { ok = false, error = "Personaggio non pronto." }
+		return { ok = false, error = "Character is not ready." }
 	end
 	return { ok = true }
 end
@@ -167,7 +168,7 @@ function ArenaService.Enforce(player)
 		return
 	end
 	teleport(player, WorldLayout.ArenaGate(index) + Vector3.new(0, 4, -6), lobbySpawn())
-	Notifier.Send(player, "error", "Questa arena non è sbloccata per l'eroe attivo.")
+	Notifier.Send(player, "error", "This arena is not unlocked for your active hero.")
 end
 
 function ArenaService.EnforceAll()
@@ -182,7 +183,7 @@ function ArenaService.Bind(ctx)
 	ctx.services.RemotesService.Bind(ctx, "UnlockArena", rates.UnlockArena, function(player, payload)
 		local arena = arenaFromPayload(payload)
 		if not arena then
-			return { ok = false, error = "Arena non valida." }
+			return { ok = false, error = "Invalid arena." }
 		end
 		return ArenaService.Unlock(player, arena.index)
 	end)
@@ -192,7 +193,7 @@ function ArenaService.Bind(ctx)
 		end
 		local arena = arenaFromPayload(payload)
 		if not arena then
-			return { ok = false, error = "Destinazione non valida." }
+			return { ok = false, error = "Invalid destination." }
 		end
 		return ArenaService.TeleportToArena(player, arena.index)
 	end)

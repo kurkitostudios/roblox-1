@@ -1,4 +1,4 @@
-# Setup in Roblox Studio — Build 001
+# Setup in Roblox Studio — Build 002
 
 Questo progetto si sincronizza con **Roblox Studio Script Sync**. Non usare Rojo, non installare Wally e non aggiungere un file di progetto Rojo.
 

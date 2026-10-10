@@ -46,6 +46,9 @@ local function addFamily(family, prefix, label, tint)
 		potions[id] = {
 			id = id,
 			name = label .. " " .. rarity,
+			description = family == "HealthRegen" and "Restores health over time. A new potion of the same family replaces this one."
+				or family == "DoubleDamage" and "Doubles damage. A new potion of the same family replaces this one."
+				or "Doubles fortune. A new potion of the same family replaces this one.",
 			family = family,
 			rarity = rarity,
 			duration = PotionConfig.RarityDuration[rarity],
@@ -58,9 +61,9 @@ local function addFamily(family, prefix, label, tint)
 	end
 end
 
-addFamily("HealthRegen", "health", "Pozione Vita", Color3.fromRGB(220, 70, 80))
-addFamily("DoubleDamage", "damage", "Pozione Danno", Color3.fromRGB(230, 120, 40))
-addFamily("DoubleFortune", "fortune", "Pozione Fortuna", Color3.fromRGB(80, 200, 140))
+addFamily("HealthRegen", "health", "Health Potion", Color3.fromRGB(220, 70, 80))
+addFamily("DoubleDamage", "damage", "Damage Potion", Color3.fromRGB(230, 120, 40))
+addFamily("DoubleFortune", "fortune", "Fortune Potion", Color3.fromRGB(80, 200, 140))
 
 PotionConfig.Potions = potions
 

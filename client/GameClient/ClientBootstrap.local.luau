@@ -13,6 +13,7 @@ if not sharedFolder then
 end
 
 local RemoteNames = require(sharedFolder:WaitForChild("RemoteNames"))
+local Strings = require(sharedFolder:WaitForChild("Strings"))
 local remotes = ReplicatedStorage:WaitForChild(RemoteNames.Folder, 20)
 if not remotes then
 	warn("[Kurkito] Remote non creati. Avvia il server con Main in ServerScriptService.GameServer.")
@@ -24,6 +25,8 @@ local HUD = require(uiFolder:WaitForChild("HUD"))
 local HeroSelect = require(uiFolder:WaitForChild("HeroSelect"))
 local Menus = require(uiFolder:WaitForChild("Menus"))
 local Notifications = require(uiFolder:WaitForChild("Notifications"))
+local WorldText = require(script.Parent:WaitForChild("WorldText"))
+local Motion = require(script.Parent:WaitForChild("Motion"))
 
 local state = {
 	profile = nil,
@@ -39,13 +42,13 @@ local state = {
 local function invoke(name, payload)
 	local remote = remotes:WaitForChild(name, 5)
 	if not remote then
-		return { ok = false, error = "Remote non disponibile." }
+		return { ok = false, error = Strings.Error.RemoteMissing }
 	end
 	local ok, result = pcall(function()
 		return remote:InvokeServer(payload or {})
 	end)
 	if not ok or type(result) ~= "table" then
-		return { ok = false, error = "Richiesta non riuscita." }
+		return { ok = false, error = Strings.Error.RequestFailed }
 	end
 	return result
 end
@@ -56,6 +59,18 @@ gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = playerGui
+
+local uiScale = Instance.new("UIScale")
+uiScale.Parent = gui
+local function fitScale()
+	local camera = workspace.CurrentCamera
+	local height = camera and camera.ViewportSize.Y or 800
+	uiScale.Scale = math.clamp(height / 900, 0.78, 1.05)
+end
+fitScale()
+if workspace.CurrentCamera then
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitScale)
+end
 
 local function notify(kind, text)
 	Notifications.Push(kind, text)
@@ -98,5 +113,7 @@ remotes:WaitForChild("Vitals").OnClientEvent:Connect(function(payload)
 	HUD.Update(state.profile, state.vitals)
 end)
 
+WorldText.Start()
+Motion.Start()
 refresh()
-print("[Kurkito] Client Build 001 pronto.")
+print("[Kurkito] Client Build 002 ready.")

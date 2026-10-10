@@ -1,6 +1,6 @@
 -- Abilità speciali. Nomi, costi e numeri sono PROVVISORI.
--- Sblocco: Maestria 10 / 25 / 50. Il rango sale spendendo Skill Point.
--- A rango 0 l'abilità funziona già con il valore base, se la Maestria la sblocca.
+-- Sblocco: Mastery 10 / 25 / 50. Il rango sale spendendo Skill Point.
+-- A rango 0 l'abilità funziona già con il valore base, se la Mastery la sblocca.
 
 local AbilityConfig = {
 	MaxRank = 10,
@@ -8,8 +8,8 @@ local AbilityConfig = {
 	Warrior = {
 		{
 			id = "spinning_slash",
-			name = "Colpo rotante",
-			description = "Colpisce tutti i nemici vicini.",
+			name = "Spinning Slash",
+			description = "Hits every nearby enemy.",
 			masteryRequired = 10,
 			cooldown = 7,
 			mana = 0,
@@ -20,8 +20,8 @@ local AbilityConfig = {
 		},
 		{
 			id = "steel_skin",
-			name = "Pelle d'acciaio",
-			description = "Riduce i danni subiti per alcuni secondi.",
+			name = "Steel Skin",
+			description = "Reduces damage taken for a few seconds.",
 			masteryRequired = 25,
 			cooldown = 14,
 			mana = 0,
@@ -32,8 +32,8 @@ local AbilityConfig = {
 		},
 		{
 			id = "fury",
-			name = "Furia",
-			description = "Aumenta il danno per alcuni secondi.",
+			name = "Fury",
+			description = "Increases damage for a few seconds.",
 			masteryRequired = 50,
 			cooldown = 20,
 			mana = 0,
@@ -47,8 +47,8 @@ local AbilityConfig = {
 	Mage = {
 		{
 			id = "fireball",
-			name = "Palla di fuoco",
-			description = "Scaglia una palla di fuoco sul bersaglio.",
+			name = "Fireball",
+			description = "Hurls a fireball at the target.",
 			masteryRequired = 10,
 			cooldown = 4,
 			mana = 20,
@@ -60,8 +60,8 @@ local AbilityConfig = {
 		},
 		{
 			id = "magic_barrier",
-			name = "Barriera magica",
-			description = "Assorbe danni con uno scudo.",
+			name = "Magic Barrier",
+			description = "Absorbs damage with a shield.",
 			masteryRequired = 25,
 			cooldown = 12,
 			mana = 30,
@@ -72,8 +72,8 @@ local AbilityConfig = {
 		},
 		{
 			id = "arcane_explosion",
-			name = "Esplosione arcana",
-			description = "Esplosione magica attorno al mago.",
+			name = "Arcane Explosion",
+			description = "A magical burst around the mage.",
 			masteryRequired = 50,
 			cooldown = 16,
 			mana = 45,
@@ -87,8 +87,8 @@ local AbilityConfig = {
 	Archer = {
 		{
 			id = "multi_arrow",
-			name = "Freccia multipla",
-			description = "Colpisce fino a tre nemici.",
+			name = "Multi Shot",
+			description = "Hits up to three enemies.",
 			masteryRequired = 10,
 			cooldown = 6,
 			mana = 0,
@@ -100,8 +100,8 @@ local AbilityConfig = {
 		},
 		{
 			id = "piercing_shot",
-			name = "Colpo penetrante",
-			description = "Trafigge i nemici in linea.",
+			name = "Piercing Shot",
+			description = "Pierces enemies in a line.",
 			masteryRequired = 25,
 			cooldown = 9,
 			mana = 0,
@@ -114,8 +114,8 @@ local AbilityConfig = {
 		},
 		{
 			id = "hawk_eye",
-			name = "Occhio di falco",
-			description = "Aumenta danno e gittata per alcuni secondi.",
+			name = "Hawk Eye",
+			description = "Increases damage and range for a few seconds.",
 			masteryRequired = 50,
 			cooldown = 18,
 			mana = 0,

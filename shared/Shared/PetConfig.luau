@@ -116,7 +116,7 @@ for _, arena in ipairs(ArenaConfig) do
 		id = "egg_arena_" .. arena.index,
 		kind = "coins",
 		arena = arena.index,
-		name = "Uovo " .. arena.name,
+		name = arena.name .. " Egg",
 		cost = math.floor(120 * (1.48 ^ (arena.index - 1)) + 0.5),
 		productId = nil,
 		enabled = true,
@@ -144,7 +144,7 @@ local specials = {
 	{
 		id = "egg_robux_1",
 		kind = "robux",
-		name = "Uovo Reale I",
+		name = "Royal Egg I",
 		terrace = 1,
 		arenas = "1–5",
 		cost = nil,
@@ -156,7 +156,7 @@ local specials = {
 	{
 		id = "egg_robux_2",
 		kind = "robux",
-		name = "Uovo Reale II",
+		name = "Royal Egg II",
 		terrace = 2,
 		arenas = "6–10",
 		cost = nil,
@@ -168,7 +168,7 @@ local specials = {
 	{
 		id = "egg_robux_3",
 		kind = "robux",
-		name = "Uovo Reale III",
+		name = "Royal Egg III",
 		terrace = 3,
 		arenas = "11–15",
 		cost = nil,

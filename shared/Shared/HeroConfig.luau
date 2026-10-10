@@ -11,22 +11,22 @@ local HeroConfig = {
 	Talents = {
 		{
 			id = "vitality",
-			name = "Vitalità",
-			description = "Aumenta gli HP massimi.",
+			name = "Vitality",
+			description = "Increases maximum HP.",
 			maxRank = 10,
 			hpPct = 0.03,
 		},
 		{
 			id = "power",
-			name = "Potenza",
-			description = "Aumenta il danno.",
+			name = "Power",
+			description = "Increases damage.",
 			maxRank = 10,
 			dmgPct = 0.03,
 		},
 		{
 			id = "class_mastery",
-			name = "Specializzazione",
-			description = "Guerriero: Speed. Mago: Mana. Arciere: Attack Speed.",
+			name = "Specialization",
+			description = "Warrior: Speed. Mage: Mana. Archer: Attack Speed.",
 			maxRank = 10,
 		},
 	},
@@ -44,8 +44,8 @@ local HeroConfig = {
 	Classes = {
 		Warrior = {
 			id = "Warrior",
-			displayName = "Guerriero",
-			description = "Combattimento ravvicinato. Potenzia HP, DMG e Speed.",
+			displayName = "Warrior",
+			description = "Close combat. Upgrade HP, DMG, and Speed.",
 			stats = { "HP", "DMG", "Speed" },
 			color = Color3.fromRGB(176, 72, 58),
 			baseHP = 130,
@@ -66,8 +66,8 @@ local HeroConfig = {
 		},
 		Mage = {
 			id = "Mage",
-			displayName = "Mago",
-			description = "Combattimento magico. Potenzia HP, DMG e Mana.",
+			displayName = "Mage",
+			description = "Magical combat. Upgrade HP, DMG, and Mana.",
 			stats = { "HP", "DMG", "Mana" },
 			color = Color3.fromRGB(78, 112, 196),
 			baseHP = 90,
@@ -88,8 +88,8 @@ local HeroConfig = {
 		},
 		Archer = {
 			id = "Archer",
-			displayName = "Arciere",
-			description = "Attacchi a distanza. Potenzia HP, DMG e Attack Speed.",
+			displayName = "Archer",
+			description = "Ranged attacks. Upgrade HP, DMG, and Attack Speed.",
 			stats = { "HP", "DMG", "AttackSpeed" },
 			color = Color3.fromRGB(86, 150, 92),
 			baseHP = 105,

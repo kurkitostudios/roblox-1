@@ -24,12 +24,12 @@ function QuestService.OnKill(player)
 				if quest.unlockNextHero then
 					unlocked = Rules.UnlockNextHero(data, HeroConfig.Order)
 				end
-				local message = "Missione completata: " .. quest.name
+				local message = "Quest complete: " .. quest.name
 				if unlocked then
-					message ..= ". Eroe sbloccato: " .. HeroConfig.Classes[unlocked].displayName
+					message ..= ". Hero unlocked: " .. HeroConfig.Classes[unlocked].displayName
 				end
 				if quest.coins and quest.coins > 0 then
-					message ..= ". +" .. tostring(quest.coins) .. " monete"
+					message ..= ". +" .. tostring(quest.coins) .. " Coins"
 				end
 				Notifier.Send(player, "quest", message)
 			end
