@@ -129,15 +129,8 @@ function HUD.Update(profile, vitals)
 	local maxHp = vitals.maxHp or 1
 	refs.hpText.Text = string.format("HP  %d / %d", math.floor(hp + 0.5), math.floor(maxHp + 0.5))
 	refs.hpFill.Size = UDim2.fromScale(math.clamp(hp / math.max(1, maxHp), 0, 1), 1)
-	local isMage = profile.selectedHero == "Mage"
-	refs.manaText.Visible = isMage
-	refs.manaFill.Parent.Visible = isMage
-	if isMage then
-		local mana = vitals.mana or 0
-		local maxMana = vitals.maxMana or 1
-		refs.manaText.Text = string.format("Mana  %d / %d", math.floor(mana + 0.5), math.floor(maxMana + 0.5))
-		refs.manaFill.Size = UDim2.fromScale(math.clamp(mana / math.max(1, maxMana), 0, 1), 1)
-	end
+	refs.manaText.Visible = false
+	refs.manaFill.Parent.Visible = false
 	local need = Rules.XpToNext(hero.mastery, GameConfig.MasteryCurve, GameConfig.MaxMastery)
 	local ratio = 1
 	if need then
@@ -148,7 +141,7 @@ function HUD.Update(profile, vitals)
 	end
 	refs.xpFill.Size = UDim2.fromScale(math.clamp(ratio, 0, 1), 1)
 	refs.coins.Text = "Coins  " .. Rules.FormatNumber(profile.coins)
-	refs.rebirth.Text = ui.RebirthWord .. "  " .. tostring(hero.rebirths) .. "   ·   " .. ui.TotalWord .. " " .. tostring(Rules.TotalRebirths(profile))
+	refs.rebirth.Text = ui.RebirthWord .. "  " .. tostring(Rules.WarriorRebirths(profile))
 	local shield = math.floor(vitals.shield or 0)
 	refs.meta.Text = shield > 0 and (ui.Shield .. tostring(shield)) or (ui.DamageWord .. " " .. tostring(math.floor((vitals.damage or 0) + 0.5)))
 

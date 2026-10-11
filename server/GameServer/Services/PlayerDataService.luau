@@ -66,10 +66,10 @@ function PlayerDataService.Start(context)
 	if ok then
 		store = result
 		storeReady = true
-		log("DataStore attivo: " .. storeName())
+		log("DataStore active: " .. storeName())
 	else
 		storeReady = false
-		warnLog("DataStore non disponibile (" .. storeName() .. "): " .. tostring(result))
+		warnLog("DataStore unavailable (" .. storeName() .. "): " .. tostring(result))
 	end
 end
 
@@ -271,7 +271,7 @@ function PlayerDataService.Save(player, releaseLock)
 		end
 	else
 		session.dirty = true
-		warnLog("Salvataggio fallito per " .. tostring(session.userId) .. ": " .. tostring(lastError))
+		warnLog("Save failed for " .. tostring(session.userId) .. ": " .. tostring(lastError))
 	end
 	if session.saveQueued and player.Parent ~= nil and not releaseLock then
 		session.saveQueued = false
@@ -349,18 +349,18 @@ function PlayerDataService.LoadPlayer(player)
 		session.loaded = true
 		session.persist = true
 		session.error = nil
-		log("Profilo caricato per " .. player.Name .. " (" .. storeName() .. ")")
+		log("Profile loaded for " .. player.Name .. " (" .. storeName() .. ")")
 	elseif RunService:IsStudio() then
 		session.data = ProfileTemplate.Create(startingCoins())
 		session.loaded = true
 		session.persist = false
 		session.error = nil
-		warnLog("Fallback memoria Studio per " .. player.Name .. ": " .. tostring(reason))
+		warnLog("Studio memory fallback for " .. player.Name .. ": " .. tostring(reason))
 	else
 		session.loaded = false
 		session.persist = false
 		session.error = "Could not load your data. Rejoin in a moment. Nothing was overwritten."
-		warnLog("Caricamento rifiutato per " .. player.Name .. ": " .. tostring(reason))
+		warnLog("Load rejected for " .. player.Name .. ": " .. tostring(reason))
 	end
 	if player.Parent == nil then
 		if session.loaded and session.persist then

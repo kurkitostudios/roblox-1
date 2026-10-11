@@ -44,10 +44,12 @@ function ProfileTemplate.Create(startingCoins)
 	return {
 		schemaVersion = ProfileTemplate.SchemaVersion,
 		coins = startingCoins or 0,
-		selectedHero = "",
-		firstHeroChosen = false,
+		-- Le monete iniziali di Studio non contano come guadagno.
+		lifetimeCoinsEarned = 0,
+		selectedHero = "Warrior",
+		firstHeroChosen = true,
 		unlockedHeroes = {
-			Warrior = false,
+			Warrior = true,
 			Mage = false,
 			Archer = false,
 		},

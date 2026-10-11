@@ -9,12 +9,11 @@ local PromptRouter = {}
 function PromptRouter.Start(ctx)
 	local world = workspace:FindFirstChild("KurkitoWorld")
 	if not world then
-		warn("[Kurkito] Prompt non collegati: mondo assente.")
+		warn("[Kurkito] Prompts were not connected: the world is missing.")
 		return
 	end
 	local arena = ctx.services.ArenaService
 	local eggs = ctx.services.EggService
-	local heroes = ctx.services.HeroService
 	local rebirth = ctx.services.RebirthService
 	for _, descendant in ipairs(world:GetDescendants()) do
 		if descendant:IsA("ProximityPrompt") then
@@ -42,6 +41,11 @@ function PromptRouter.Start(ctx)
 					if not result.ok then
 						Notifier.Send(player, "error", result.error)
 					end
+				elseif action == "OpenWorldEgg" then
+					local result = eggs.OpenWorld(player, descendant:GetAttribute("WorldEgg"))
+					if not result.ok then
+						Notifier.Send(player, "error", result.error)
+					end
 				elseif action == "OpenEgg" then
 					local result = eggs.OpenArena(player, descendant:GetAttribute("ArenaIndex"))
 					if not result.ok then
@@ -53,19 +57,20 @@ function PromptRouter.Start(ctx)
 						Notifier.Send(player, "error", result.error)
 					end
 				elseif action == "Hero" then
-					local result = heroes.SwitchNext(player)
-					if not result.ok then
-						Notifier.Send(player, "error", result.error)
-					end
+					Notifier.Send(player, "info", "World 0 has one hero: the Warrior.")
 				elseif action == "UpgradeInfo" then
 					local data = PlayerData.Get(player)
 					if not data or data.selectedHero == "" then
-						Notifier.Send(player, "info", "Choose a hero, then open the Upgrades menu.")
+						Notifier.Send(player, "info", "The Warrior is ready. Open the Upgrades menu.")
 					else
-						local statId = HeroConfig.Classes[data.selectedHero].stats[1]
-						local hero = data.heroes[data.selectedHero]
-						local cost = Rules.StatCost(hero.stats[statId], HeroConfig.StatDefs[statId])
-						Notifier.Send(player, "info", "Open the Upgrades menu. Next " .. statId .. ": " .. tostring(cost or "MAX") .. " Coins.")
+						local statId = HeroConfig.Classes.Warrior.stats[1]
+						local hero = data.heroes.Warrior
+						if hero and hero.stats then
+							local cost = Rules.StatCost(hero.stats[statId], HeroConfig.StatDefs[statId])
+							Notifier.Send(player, "info", "Open the Upgrades menu. Next " .. statId .. ": " .. tostring(cost or "MAX") .. " Coins.")
+						else
+							Notifier.Send(player, "info", "The Warrior is ready. Open the Upgrades menu.")
+						end
 					end
 				elseif action == "FusionInfo" then
 					Notifier.Send(player, "info", "Select 5 identical pets in the Fusion menu. Unequip them first.")
@@ -76,6 +81,19 @@ function PromptRouter.Start(ctx)
 					end
 				elseif action == "Portal" then
 					Notifier.Send(player, "info", "The World 2 portal is not active.")
+				elseif action == "OpenBestEgg" then
+					local result = eggs.OpenBest(player)
+					if not result.ok then
+						Notifier.Send(player, "error", result.error)
+					end
+				elseif action == "Merchant" then
+					local merchant = ctx.services.MerchantService
+					if merchant then
+						local result = merchant.Open(player)
+						if not result.ok then
+							Notifier.Send(player, "error", result.error)
+						end
+					end
 				end
 			end)
 		end

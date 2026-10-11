@@ -1,4 +1,4 @@
--- Bootstrap Build 002. Gli altri script di GameServer, come TestSync, restano indipendenti.
+-- Bootstrap Build 003. Gli altri script di GameServer, come TestSync, restano indipendenti.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,7 +11,7 @@ _G.__KURKITO_SERVER_STARTED = true
 
 local sharedFolder = ReplicatedStorage:WaitForChild("Shared", 20)
 if not sharedFolder then
-	error("[Kurkito] Manca ReplicatedStorage.Shared. Crea la cartella e collega Script Sync a shared/Shared. Vedi docs/SETUP_ROBLOX_STUDIO.md")
+	error("[Kurkito] ReplicatedStorage.Shared is missing. Create the folder and connect Script Sync to shared/Shared. See docs/SETUP_ROBLOX_STUDIO.md")
 end
 
 local servicesFolder = script.Parent:WaitForChild("Services")
@@ -36,6 +36,7 @@ local ArenaService = load("ArenaService")
 local InventoryService = load("InventoryService")
 local PetService = load("PetService")
 local EggService = load("EggService")
+local MerchantService = load("MerchantService")
 local FusionService = load("FusionService")
 local PotionService = load("PotionService")
 local RebirthService = load("RebirthService")
@@ -52,6 +53,7 @@ ctx.services.PlayerDataService = PlayerDataService
 ctx.services.HeroService = HeroService
 ctx.services.ArenaService = ArenaService
 ctx.services.EggService = EggService
+ctx.services.MerchantService = MerchantService
 ctx.services.RebirthService = RebirthService
 ctx.services.EnemyService = EnemyService
 ctx.services.CombatService = CombatService
@@ -73,6 +75,7 @@ ArenaService.Bind(ctx)
 InventoryService.Bind(ctx)
 PetService.Bind(ctx)
 EggService.Bind(ctx)
+MerchantService.Bind(ctx)
 FusionService.Bind(ctx)
 PotionService.Bind(ctx)
 RebirthService.Bind(ctx)
@@ -81,4 +84,4 @@ StudioCommands.Start()
 GameLoop.Start(ctx)
 PlayerDataService.HookPlayers()
 
-print("[Kurkito] Build 002 started. World 1, 15 arenas, automatic combat.")
+print("[Kurkito] Build 003.1 started. World 0 Warrior, lobby, Arena 1, automatic combat.")

@@ -1,55 +1,62 @@
-# Stato — Build 002
+# Stato — Build 003.1
 
-Valori di danno, costi, curva XP, drop e bonus Pet sono **provvisori** e centralizzati in `shared/Shared/`. Le mesh sono parti Roblox generate da `WorldBuilder`, non asset artistici definitivi.
+Correzione del Mondo 0 sulla Build 003. Non è un gioco nuovo e non rifinisce le arene 2–15.
 
-Nessun playtest in Roblox Studio è stato eseguito in questa consegna. Lo stato “funzionante” qui significa: implementato, con regole coperte dai test statici dove indicato in [TESTING.md](TESTING.md).
+Valori di danno, costi, curva XP, drop e bonus Pet sono **provvisori** e centralizzati in `shared/Shared/`. Le mesh sono parti Roblox generate da `WorldBuilder`, `TribalKit`, `PropKit`, `CreatureKit` e `HeroAppearance`. Non sono asset importati.
+
+Nessun playtest in Roblox Studio è stato eseguito. “Staticamente validato” significa compilazione Luau, regole pure e controlli di struttura. Non significa fedeltà visiva, FPS o correttezza di runtime.
+
+`WorldBuildId` è `world0-build003-1`. Un server che ha ancora il mondo `world0-build003` lo distrugge e lo ricostruisce. Lo schema del profilo resta versione 1. I nomi dei DataStore non cambiano.
 
 ## Completo nel codice
 
-- Bootstrap server (`Main.server.luau`) e client (`ClientBootstrap.local.luau`). `TestSync.legacy.luau` è conservato.
-- Configurazioni condivise: gioco, eroi, abilità, arene, nemici, loot, pozioni, Pet, missioni, remoti, layout del mondo.
-- Regole pure in `Rules.luau`: XP, monete, statistiche, eroi, Rebirth, drop, pozioni, fusione, missioni.
-- Dati giocatore: schema versione 1, default, sanitizer, session lock, retry, autosave, salvataggio in uscita e alla chiusura, niente sovrascrittura se il caricamento fallisce. In Studio, store separati; se le API sono spente, sessione solo in memoria.
-- Tre classi (Warrior, Mage, Archer) con statistiche, Mastery 0–50, +1 Skill Point per livello, scelta iniziale unica, cambio dalla lobby, progressi indipendenti, monete condivise. I nomi visibili sono inglesi. Gli id interni restano `Warrior`, `Mage`, `Archer`.
-- Due missioni di uccisioni che sbloccano gli eroi successivi. Lo sblocco resta dopo il Rebirth.
-- Potenziamenti statistiche e spesa Skill Point su talenti e abilità, con costi progressivi.
-- Mondo 1 idempotente: lobby, 15 arene chiuse con pad sicuro, percorso, zona uova a tre terrazze, tre classifiche con 9 podi, zone eroi / upgrade / fusione / Rebirth, portale Mondo 2 spento.
-- Nemici stilizzati, stati Idle / Aggro / Chasing / Attacking / Returning / Dead / Respawning, cerchio di aggro, guinzaglio di 5 secondi, respawn con modello nuovo.
-- Combattimento automatico server-side, abilità a cooldown, mana del Mago, credito uccisione configurabile senza doppia ricompensa. L'aggro richiede l'arena sbloccata dall'eroe attivo.
-- Sblocco arene per eroe (Maestria + monete). Teleport verificato dal server. Il Rebirth riblocca solo le arene di quell'eroe.
-- Economia atomica sul server.
-- Rebirth in due passi (prepara, conferma), un'operazione alla volta, solo all'altare, +10% XP e +10% monete cumulativi per quell'eroe.
-- Inventario condiviso: equipaggiamenti (con classe e `boundHero`), materiali, pozioni, collezionabili, Pet. I charm senza `boundHero` restano al Rebirth.
-- Pozioni: rigenerazione, danno ×2, fortuna ×2, durate 30/120/300/600/1200. Stessa famiglia: la nuova sostituisce la precedente.
-- Pet: massimo 3 equipaggiati, 15 uova monete (pool = mostri di quell'arena, arena sbloccata), fusione 5:1 fino a Void.
-- Vetrine uova Robux con probabilità visibili, `productId = nil`, `enabled = false`. Nessun `MarketplaceService`.
-- Classifiche OrderedDataStore (somma Rebirth, tempo, uccisioni) con aggiornamento periodico e pupazzi di fallback sui podi.
-- UI generata da LocalScript: HUD, scelta eroe, menu eroi, upgrade, inventario, Pet, fusione, pozioni, Rebirth, arene, missioni, uova, notifiche.
-- Rate limit, validazione payload, prossimità, lock su Rebirth e fusione.
+- Un solo eroe giocabile: **Warrior**. `SelectHero` rifiuta ogni altro id. `SwitchHero` restituisce sempre un errore. Mastery, XP, statistiche, Skill Point, Rebirth, loot, equip, uova e combattimento usano il Warrior.
+- I nuovi profili nascono Warrior, Mastery 0, `firstHeroChosen = true`. Non c'è una schermata di scelta classe. Può comparire una scheda introduttiva del Warrior, senza pulsanti Mage o Archer.
+- `Rules.ReconcileWorld0` gira a ogni caricamento. Se l'eroe attivo archiviato è Mage o Archer, il puntatore passa a Warrior. La Maestria, gli upgrade e i Rebirth archiviati restano nelle loro tabelle e non vengono copiati. Portafoglio, Pet, collezionabili, materiali e missioni non si cancellano. Se `lifetimeCoinsEarned` manca, diventa 0: non si inventa lo storico dal saldo.
+- Mage e Archer restano nello schema (`HeroConfig.Order`) solo per leggere i salvataggi vecchi. Non hanno menu, modelli visibili, animazioni attive né abilità invocabili.
+- Le missioni `prova_del_ferro` e `cacciatore` non sbloccano altri eroi. I nomi visibili restano First Hunt e Hunter.
+- Guerriero procedurale: pelle, pelliccia, osso, pittura, spalle, cintura, fasce, calzari e clava di legno con testa di pietra. Niente spada sul modello attivo. HP, DMG e Speed cambiano ossa, clava e fasce di movimento secondo `Rules.VisualTier`.
+- Animazioni procedurali del rig (`Motor6D.Transform`): idle, walk, run, combat-ready, attack 1, attack 2, smash, heavy sweep, hide guard, primal fury, danno, stun, vittoria, morte, spawn. Il server non muove il personaggio con queste pose.
+- Arena 1: Scavenger, Bonewalker, Rotfang e Grave Chieftain, con mosse, intervalli, portate e danni diversi. Il server decide il colpo. Gli id `zombie` e `zombie_corrotto` tengono HP, danno, XP e monete precedenti.
+- Summon Dead crea fino a 2 Risen Dead per cast e 3 vivi. Non sono nel piano di spawn né nei Pet. XP e monete 0, e `Kill` non chiama `GrantRewards`. Si distruggono se il boss muore o torna al guinzaglio.
+- Tre uova fisse del Mondo 0. Coin Egg 250 monete (provvisorio): zombie 70, zombie_corrotto 22, rotfang 8. Advanced Coin Egg 900 monete (provvisorio): zombie_corrotto 45, rotfang 40, grave_chieftain 15. Non segue l'arena sbloccata. Premium Egg (`egg_robux_1`) ha `productId = nil` e `enabled = false`. Le uova delle arene future restano in config e `OpenArena` le rifiuta.
+- Mercante: skin, bancarella, prompt “Talk to Merchant”, pannello “Tribal Merchant”. `TradingEnabled = false`, tariffe vuote, massimo 0. `SellLoot` risponde “Trading will be available soon.” e non toglie oggetti né dà monete.
+- Quattro classifiche: uccisioni, Rebirth del Warrior, tempo, monete vita (`lifetimeCoinsEarned`). La spesa e i rimborsi non riducono il totale vita. Il saldo iniziale di Studio (500) e `/coins` usano `AddCoins`, non il totale vita. I combattimenti e le missioni usano `GrantEarnedCoins`.
+- La board Rebirth resta `Kurkito_LB_Rebirth_v1`. Il prossimo `SetAsync` di un giocatore sostituisce la vecchia somma delle tre classi con i Rebirth del Warrior. Chi non rientra tiene il valore vecchio finché non viene riscritto. Non si rinomina lo store e non si inventano punteggi.
+- Lobby: villaggio a ovest, uova a sud, quattro muri e dodici podi a est, strada verso l'Arena 1 a nord. Il builder è idempotente sul `BuildId`.
+- Le arene 2–15 restano in config e nei salvataggi. Non vengono costruite né popolate. Sblocco e teletrasporto verso di loro rispondono che non sono disponibili, senza cancellare `unlockedArenas`. Il portale del Mondo 2 resta spento.
+- Testi giocatore in inglese. I cartelli 3D usano `WorldTextConfig` e si aggiornano circa ogni 0,3 secondi.
 
 ## Parziale
 
-- **Aspetto.** Eroi, nemici, pet, lobby, arene e uova sono geometria procedurale (`HeroAppearance`, `CreatureKit`, `PropKit`). I livelli grafici usano `Rules.VisualTier` e non cambiano le statistiche. I nemici si orientano verso il bersaglio solo mentre inseguono o attaccano.
-- **Testi 3D.** `WorldTextConfig` limita nomi, cartelli, uova, podi e prompt. Il client sfuma i cartelli marcati ogni 0,3 secondi. La HUD non usa queste distanze.
-- **Lingua.** Il testo visibile al giocatore è inglese, centralizzato in `Strings` per la UI e per le notifiche principali. I commenti del codice possono restare in italiano.
-- **Podi.** Etichette e modelli ci sono. L'avatar reale dipende da `GetHumanoidDescriptionFromUserId`; se fallisce resta un blocco. Lo snapshot estetico è un DataStore separato.
-- **Classifiche.** Il codice c'è. Senza API Studio o senza giocatori restano vuote. Non vanno interrogate a ogni frame.
-- **Movimento nemici.** `Humanoid:MoveTo` resta il movimento normale. Se restano bloccati, un piccolo scarto laterale e, più tardi, un percorso di `PathfindingService`. L'ingresso alle arene è ancora un teletrasporto.
-- **Bilanciamento.** Tutti i numeri sono provvisori.
-- **Materiali.** Si accumulano. Non esiste una forgia.
-- **UI.** Pensata per mouse e touch (`Activated`, altezza minima 44). Non è stata verificata su un dispositivo.
+- **Aspetto.** Geometria procedurale ispirata ai fogli approvati. Non è una mesh esterna e non è stata vista in Studio.
+- **Animazioni.** Pose locali sul rig. Non sono clip importate. Il peso del movimento e l'assenza di glitch di rotazione vanno visti in Play.
+- **Mercante.** La logica di catalogo resta dietro `TradingEnabled`. Spento, il pannello non ha pulsanti di vendita.
+- **Podi.** L'avatar reale dipende da `GetHumanoidDescriptionFromUserId`. Altrimenti resta il manichino.
+- **Classifiche.** Senza API o senza giocatori restano vuote.
+- **Bilanciamento.** Prezzi uova, Rotfang, boss e Risen Dead sono provvisori. I due zombie già presenti no.
+- **Arene 2–15.** Configurazione compatibile, stanze non costruite.
 
 ## Non implementato
 
-- Mondo 2 giocabile. Il portale avvisa che è spento.
+- Mondo 2 giocabile.
 - Acquisti Robux e Product ID.
-- Forgia, crafting, animazioni importate, mesh esterne. Le animazioni di Build 002 sono procedurali (`TweenService` e `Motor6D.Transform` sul client).
+- Catalogo finale del mercante e prezzi approvati.
+- Rifinitura visiva delle arene 2–15.
 - Verifica runtime in Roblox Studio.
+
+## Migrazioni
+
+- `ReconcileWorld0` è idempotente. Non assegna Rebirth e non copia upgrade tra classi.
+- `lifetimeCoinsEarned` assente diventa 0. Non si ricostruisce dal portafoglio.
+- La board Rebirth viene sovrascritta al prossimo push con i soli Rebirth del Warrior.
+- La board monete è `Kurkito_LB_Coins_v1` / `Kurkito_Studio_LB_Coins_v1` e riceve il totale vita, non il saldo.
 
 ## Regole da non perdere
 
-- Monete, Pet, materiali, pozioni e collezionabili sono dell'account. Maestria, statistiche, Skill Point, arene e Rebirth sono dell'eroe.
-- Il bonus Rebirth si applica solo alle ricompense dell'eroe attivo. Le monete delle missioni sono fisse.
-- `boundHero == nil` non viene cancellato al Rebirth. `boundHero == classe` sì, solo per l'eroe rinato.
-- L'accesso alle uova normali deriva dalle arene sbloccate, non da un flag separato.
-- Un drop con probabilità base 1 non viene abbassato dal tetto fortuna. Il tetto limita solo le probabilità inferiori a 1.
+- Monete, Pet, materiali, pozioni e collezionabili sono dell'account. Maestria, statistiche, Skill Point, arene e Rebirth attivi sono del Warrior.
+- I dati Mage e Archer restano nel profilo e non sono giocabili.
+- Il bonus Rebirth sulle ricompense usa i Rebirth del Warrior.
+- `boundHero == nil` non viene cancellato al Rebirth. `boundHero == "Warrior"` sì, solo per il Warrior.
+- Un drop con probabilità base 1 non viene abbassato dal tetto fortuna.
+- Gli id `zombie` e `zombie_corrotto` restano validi nei salvataggi e nei Pet.

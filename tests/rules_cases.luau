@@ -93,10 +93,10 @@ do
 	local switched = Rules.SwitchHero(profile, "Mage")
 	expect(switched == false, "mago ancora bloccato")
 	profile.unlockedHeroes.Mage = true
-	expect(Rules.SwitchHero(profile, "Mage") == true, "cambio verso mago sbloccato")
+	expect(Rules.SwitchHero(profile, "Mage") == false, "il Mondo 0 non cambia classe")
+	expect(profile.selectedHero == "Warrior", "resta il guerriero")
 	expect(profile.heroes.Warrior.mastery == 50, "il cambio non sposta la maestria")
 	expect(profile.heroes.Mage.mastery == 12, "il mago conserva la propria maestria")
-	profile.selectedHero = "Warrior"
 	local removed
 	local applied
 	applied, err, removed = Rules.ApplyRebirth(profile, "Warrior", { "HP", "DMG", "Speed" }, { "spinning_slash", "steel_skin", "fury" }, { "vitality", "power", "class_mastery" })
@@ -214,6 +214,40 @@ do
 	}
 	expect(Rules.UnlockNextHero(profile, { "Warrior", "Mage", "Archer" }) == "Mage", "sblocca il successivo")
 	expect(profile.unlockedHeroes.Mage == true, "sblocco permanente nel profilo")
+end
+
+do
+	local profile = {
+		firstHeroChosen = true,
+		selectedHero = "Mage",
+		unlockedHeroes = { Warrior = true, Mage = true, Archer = false },
+		coins = 80,
+		lifetimeCoinsEarned = 40,
+		heroes = {
+			Warrior = newHero(),
+			Mage = newHero(),
+		},
+	}
+	profile.heroes.Warrior.mastery = 20
+	profile.heroes.Warrior.rebirths = 2
+	profile.heroes.Mage.mastery = 40
+	profile.heroes.Mage.rebirths = 7
+	expect(Rules.ReconcileWorld0(profile) == true, "ricostruisce il guerriero attivo")
+	expect(profile.selectedHero == "Warrior", "l'eroe attivo diventa Warrior")
+	expect(profile.heroes.Warrior.mastery == 20, "non copia la maestria archiviata")
+	expect(profile.heroes.Warrior.rebirths == 2, "non copia i rebirth archiviati")
+	expect(profile.heroes.Mage.mastery == 40 and profile.heroes.Mage.rebirths == 7, "l'archivio resta")
+	expect(profile.coins == 80, "il portafoglio resta")
+	expect(Rules.ReconcileWorld0(profile) == false, "la riconciliazione è idempotente")
+	expect(Rules.WarriorRebirths(profile) == 2, "classifica rebirth del Warrior")
+	expect(Rules.TotalRebirths(profile) == 9, "la somma archiviata non è la classifica")
+	local gained = Rules.GrantEarnedCoins(profile, 15, 100000)
+	expect(gained == 15 and profile.coins == 95 and profile.lifetimeCoinsEarned == 55, "guadagno vita")
+	profile.coins = Rules.AddCoins(profile.coins, 10, 100000)
+	expect(profile.lifetimeCoinsEarned == 55, "il rimborso non conta come guadagno")
+	expect(Rules.SummonRoom(2, 3, 2) == 1, "tetto dei minion")
+	expect(Rules.SummonRoom(3, 3, 2) == 0, "nessun minion oltre il tetto")
+	expect(Rules.SelectFirstHero(profile, "Mage", { Warrior = true, Mage = true }) == false, "niente selezione mago")
 end
 
 expect(Rules.FormatNumber(0) == "0", "format 0")

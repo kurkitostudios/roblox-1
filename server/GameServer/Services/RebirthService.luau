@@ -21,13 +21,14 @@ local RebirthService = {}
 
 local function ready(player)
 	local data = PlayerData.Get(player)
-	if not data or data.selectedHero == "" then
-		return nil, nil, "Select a hero."
+	local hero = data and data.heroes and data.heroes.Warrior
+	if not data or type(hero) ~= "table" then
+		return nil, nil, "The Warrior is not ready."
 	end
+	data.selectedHero = "Warrior"
 	if not HeroService.Near(player, WorldLayout.Rebirth(), WorldLayout.Radii.Rebirth) then
 		return nil, nil, "Move closer to the Rebirth altar."
 	end
-	local hero = data.heroes[data.selectedHero]
 	local ok, reason = Rules.CanRebirth(hero, GameConfig.MaxMastery)
 	if not ok then
 		return nil, nil, reason
@@ -42,8 +43,8 @@ function RebirthService.Preview(player)
 	end
 	local runtime = RuntimeState.Get(player)
 	runtime.rebirthArmedUntil = os.clock() + 30
-	local heroId = data.selectedHero
-	Notifier.Send(player, "info", "Rebirth ready for " .. HeroConfig.Classes[heroId].displayName .. ". Confirm within 30 seconds.")
+	local heroId = "Warrior"
+	Notifier.Send(player, "info", "Rebirth ready for the Warrior. Confirm within 30 seconds.")
 	return {
 		ok = true,
 		heroId = heroId,
@@ -67,10 +68,10 @@ function RebirthService.Confirm(player)
 	if os.clock() > (runtime.rebirthArmedUntil or 0) then
 		return finish({ ok = false, error = "Confirmation expired. Prepare Rebirth again." })
 	end
-	local heroId = data.selectedHero
+	local heroId = "Warrior"
 	local classDef = HeroConfig.Classes[heroId]
 	local skillIds = {}
-	for _, ability in ipairs(AbilityConfig[heroId]) do
+	for _, ability in ipairs(AbilityConfig.Warrior) do
 		table.insert(skillIds, ability.id)
 	end
 	local talentIds = {}

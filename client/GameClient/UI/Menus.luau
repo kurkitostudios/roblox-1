@@ -60,26 +60,13 @@ end
 
 local function renderHeroes(profile)
 	local ui = Strings.UI
-	for _, heroId in ipairs(HeroConfig.Order) do
-		local classDef = HeroConfig.Classes[heroId]
-		local hero = profile.heroes[heroId]
-		local unlocked = profile.unlockedHeroes[heroId] == true
-		local active = profile.selectedHero == heroId
-		local header = active and ui.Active or ""
-		Widgets.Label(body, classDef.displayName .. header, UDim2.new(1, 0, 0, 22), true).TextColor3 = classDef.color:Lerp(Color3.new(1, 1, 1), 0.35)
-		if not unlocked then
-			Widgets.Label(body, ui.LockedHero, UDim2.new(1, 0, 0, 36), false)
-		else
-			Widgets.Label(body, Strings.HeroLine(hero.mastery, hero.rebirths, hero.skillPoints), UDim2.new(1, 0, 0, 20), false)
-			if not active then
-				Widgets.Button(body, ui.UseHero .. classDef.displayName, function()
-					local result = invoke("SwitchHero", { heroId = heroId })
-					if not result.ok then
-						notify("error", result.error)
-					end
-				end)
-			end
-		end
+	local classDef = HeroConfig.Classes.Warrior
+	local hero = profile.heroes.Warrior
+	Widgets.Label(body, classDef.displayName .. ui.Active, UDim2.new(1, 0, 0, 22), true).TextColor3 = classDef.color:Lerp(Color3.new(1, 1, 1), 0.35)
+	Widgets.Label(body, ui.OneHeroBody, UDim2.new(1, 0, 0, 40), false)
+	if hero then
+		Widgets.Label(body, Strings.HeroLine(hero.mastery, hero.rebirths, hero.skillPoints), UDim2.new(1, 0, 0, 20), false)
+		Widgets.Label(body, classDef.description, UDim2.new(1, 0, 0, 36), false)
 	end
 end
 
@@ -199,14 +186,13 @@ local function renderInventory(profile)
 				end
 			end
 		end
-		if #profile.inventory.equipment == 0 then
-			Widgets.Label(body, ui.NoGear, nil, false)
-		end
+		local visibleGear = 0
 		for _, entry in ipairs(profile.inventory.equipment) do
 			local def = LootConfig.GetItem(entry.itemId)
-			local bound = entry.boundHero and (" · " .. entry.boundHero) or ui.SharedItem
-			Widgets.Label(body, itemName(entry.itemId) .. bound, UDim2.new(1, 0, 0, 22), true)
-			if def then
+			if def and (def.classId == nil or def.classId == "Warrior") then
+				visibleGear += 1
+				local bound = entry.boundHero and (" · " .. entry.boundHero) or ui.SharedItem
+				Widgets.Label(body, itemName(entry.itemId) .. bound, UDim2.new(1, 0, 0, 22), true)
 				Widgets.Button(body, ui.Equip .. def.name, function()
 					local result = invoke("EquipItem", { uid = entry.uid })
 					if not result.ok then
@@ -214,6 +200,9 @@ local function renderInventory(profile)
 					end
 				end)
 			end
+		end
+		if visibleGear == 0 then
+			Widgets.Label(body, ui.NoGear, nil, false)
 		end
 		Widgets.Label(body, ui.MaterialsNote, UDim2.new(1, 0, 0, 40), false).TextColor3 = Theme.muted
 	else
@@ -417,23 +406,18 @@ local function renderArenas(profile)
 		return
 	end
 	for _, arena in ipairs(ArenaConfig) do
-		local unlocked = hero.unlockedArenas[tostring(arena.index)] == true
-		local cost = arena.cost > 0 and Strings.Coins(Rules.FormatNumber(arena.cost)) or Strings.Free()
-		Widgets.Label(body, Strings.ArenaRow(arena.index, arena.name, arena.mastery, cost, unlocked), UDim2.new(1, 0, 0, 36), true)
-		if unlocked then
+		if arena.index == 1 then
+			local unlocked = hero.unlockedArenas["1"] == true
+			Widgets.Label(body, Strings.ArenaRow(arena.index, arena.name, arena.mastery, Strings.Free(), unlocked), UDim2.new(1, 0, 0, 36), true)
 			Widgets.Button(body, ui.EnterArena .. arena.index, function()
-				local result = invoke("Teleport", { arenaIndex = arena.index })
+				local result = invoke("Teleport", { arenaIndex = 1 })
 				if not result.ok then
 					notify("error", result.error)
 				end
 			end)
 		else
-			Widgets.Button(body, ui.UnlockArena .. arena.index, function()
-				local result = invoke("UnlockArena", { arenaIndex = arena.index })
-				if not result.ok then
-					notify("error", result.error)
-				end
-			end)
+			local saved = hero.unlockedArenas[tostring(arena.index)] == true
+			Widgets.Label(body, arena.name .. " · " .. ui.ArenaLater .. (saved and " · saved" or ""), UDim2.new(1, 0, 0, 28), false).TextColor3 = Theme.muted
 		end
 	end
 end
@@ -448,31 +432,28 @@ local function renderQuests(profile)
 	end
 end
 
-local function renderEggs(profile)
+local function renderEggs(_profile)
 	local ui = Strings.UI
-	local hero = profile.selectedHero ~= "" and profile.heroes[profile.selectedHero]
-	Widgets.Label(body, ui.EggIntro, UDim2.new(1, 0, 0, 48), false)
-	for index = 1, 15 do
-		local egg = PetConfig.GetEgg(index)
-		local open = hero and hero.unlockedArenas[tostring(index)] == true
-		Widgets.Label(body, Strings.EggRow(egg.name, Strings.Coins(Rules.FormatNumber(egg.cost)), not open), UDim2.new(1, 0, 0, 32), true)
-		Widgets.Button(body, ui.OpenEgg .. index, function()
-			local result = invoke("OpenEgg", { arenaIndex = index })
+	Widgets.Label(body, ui.EggIntro, UDim2.new(1, 0, 0, 56), false)
+	for _, key in ipairs({ "coin", "advanced" }) do
+		local egg = PetConfig.GetWorldEgg(key)
+		Widgets.Label(body, egg.name .. " · " .. Strings.Coins(Rules.FormatNumber(egg.cost)) .. " · provisional", UDim2.new(1, 0, 0, 28), true)
+		Widgets.Button(body, ui.OpenEgg .. egg.name, function()
+			local result = invoke("OpenEgg", { worldEgg = key })
 			if not result.ok then
 				notify("error", result.error)
 			end
 		end)
 	end
-	for specialIndex, egg in ipairs(PetConfig.SpecialEggs) do
-		Widgets.Label(body, egg.name .. ui.NotForSale, nil, true).TextColor3 = Theme.gold
-		Widgets.Button(body, ui.ShowOdds, function()
-			local result = invoke("OpenEgg", { kind = "robux", specialIndex = specialIndex })
-			notify("info", result.error or ui.NoPurchase)
-			if result.odds then
-				notify("info", result.odds)
-			end
-		end)
-	end
+	local premium = PetConfig.GetWorldEgg("premium")
+	Widgets.Label(body, premium.name .. ui.NotForSale, nil, true).TextColor3 = Theme.gold
+	Widgets.Button(body, ui.ShowOdds, function()
+		local result = invoke("OpenEgg", { worldEgg = "premium" })
+		notify("info", result.error or ui.NoPurchase)
+		if result.odds then
+			notify("info", result.odds)
+		end
+	end)
 end
 
 local PAGES = {

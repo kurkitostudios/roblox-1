@@ -93,6 +93,7 @@ local function applyHumanoid(player, fullHeal)
 		humanoid.Health = math.min(humanoid.Health, stats.maxHp)
 	end
 	player:SetAttribute("KurkitoHero", data.selectedHero)
+	character:SetAttribute("KurkitoHero", data.selectedHero)
 	local appearance = require(script.Parent.HeroAppearance)
 	appearance.Apply(character, data.selectedHero, data.heroes[data.selectedHero], data)
 end
@@ -142,6 +143,9 @@ local function requireManageZone(player)
 end
 
 function HeroService.Select(player, heroId)
+	if heroId ~= "Warrior" then
+		return { ok = false, error = "World 0 has one hero: the Warrior." }
+	end
 	local data = PlayerData.Get(player)
 	if not data then
 		return { ok = false, error = "Data is not loaded." }
@@ -153,7 +157,7 @@ function HeroService.Select(player, heroId)
 	PlayerData.MarkDirty(player, true)
 	PlayerData.Save(player, false)
 	applyHumanoid(player, true)
-	Notifier.Send(player, "info", HeroConfig.Classes[heroId].displayName .. " is your first hero.")
+	Notifier.Send(player, "info", "The Warrior is ready.")
 	return { ok = true }
 end
 
@@ -161,9 +165,6 @@ function HeroService.Switch(player, heroId)
 	local data = PlayerData.Get(player)
 	if not data then
 		return { ok = false, error = "Data is not loaded." }
-	end
-	if not requireManageZone(player) then
-		return { ok = false, error = "Switch heroes in the lobby or at the hero post." }
 	end
 	local ok, reason = Rules.SwitchHero(data, heroId)
 	if not ok then
@@ -185,24 +186,8 @@ function HeroService.Switch(player, heroId)
 	return { ok = true }
 end
 
-function HeroService.SwitchNext(player)
-	local data = PlayerData.Get(player)
-	if not data or data.selectedHero == "" then
-		return { ok = false, error = "No active hero." }
-	end
-	local startIndex = 1
-	for index, heroId in ipairs(HeroConfig.Order) do
-		if heroId == data.selectedHero then
-			startIndex = index
-		end
-	end
-	for offset = 1, #HeroConfig.Order do
-		local heroId = HeroConfig.Order[((startIndex + offset - 1) % #HeroConfig.Order) + 1]
-		if data.unlockedHeroes[heroId] and heroId ~= data.selectedHero then
-			return HeroService.Switch(player, heroId)
-		end
-	end
-	return { ok = false, error = "You have no other unlocked hero." }
+function HeroService.SwitchNext(_player)
+	return { ok = false, error = "World 0 has one hero: the Warrior." }
 end
 
 function HeroService.Bind(ctx)

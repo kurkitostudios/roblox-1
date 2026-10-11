@@ -44,24 +44,13 @@ function HeroSelect.Mount(parent, invoke, notify)
 	local body = Widgets.Label(panel, ui.SelectHeroBody, UDim2.new(1, 0, 0, 40), false)
 	body.TextXAlignment = Enum.TextXAlignment.Center
 
-	for _, heroId in ipairs(HeroConfig.Order) do
-		local classDef = HeroConfig.Classes[heroId]
-		local button = Widgets.Button(panel, classDef.displayName .. "\n" .. classDef.description, function()
-			chosen = heroId
-			status.Text = ui.Selected .. classDef.displayName .. ui.ConfirmHint
-		end)
-		button.Size = UDim2.new(1, 0, 0, 64)
-		button.BackgroundColor3 = classDef.color:Lerp(Theme.panel, 0.55)
-	end
+	chosen = "Warrior"
+	Widgets.Label(panel, "Warrior\n" .. HeroConfig.Classes.Warrior.description, UDim2.new(1, 0, 0, 64), true).TextXAlignment = Enum.TextXAlignment.Center
 
 	status = Widgets.Label(panel, ui.TapHero, UDim2.new(1, 0, 0, 36), false)
 	status.TextXAlignment = Enum.TextXAlignment.Center
 	Widgets.Button(panel, ui.ConfirmChoice, function()
-		if not chosen then
-			notify("error", ui.SelectBeforeConfirm)
-			return
-		end
-		local result = invoke("SelectHero", { heroId = chosen })
+		local result = invoke("SelectHero", { heroId = "Warrior" })
 		if not result.ok then
 			notify("error", result.error or ui.ChoiceFailed)
 		end

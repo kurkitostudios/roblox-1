@@ -26,7 +26,7 @@ local HeroConfig = {
 		{
 			id = "class_mastery",
 			name = "Specialization",
-			description = "Warrior: Speed. Mage: Mana. Archer: Attack Speed.",
+			description = "Increases Warrior Speed.",
 			maxRank = 10,
 		},
 	},
@@ -45,9 +45,9 @@ local HeroConfig = {
 		Warrior = {
 			id = "Warrior",
 			displayName = "Warrior",
-			description = "Close combat. Upgrade HP, DMG, and Speed.",
+			description = "World 0 survivor. A heavy tribal club. Upgrade HP, DMG, and Speed.",
 			stats = { "HP", "DMG", "Speed" },
-			color = Color3.fromRGB(176, 72, 58),
+			color = Color3.fromRGB(168, 104, 58),
 			baseHP = 130,
 			hpPerLevel = 22,
 			baseDMG = 14,

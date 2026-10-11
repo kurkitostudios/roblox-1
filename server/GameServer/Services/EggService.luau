@@ -27,25 +27,25 @@ function EggService.OddsText(pool)
 	return oddsText(pool)
 end
 
-function EggService.OpenArena(player, arenaIndex)
-	if type(arenaIndex) ~= "number" or arenaIndex ~= math.floor(arenaIndex) then
-		return { ok = false, error = "Invalid egg." }
+function EggService.OpenArena(_player, _arenaIndex)
+	return { ok = false, error = Strings.Error.WorldEggOnly }
+end
+
+function EggService.OpenWorld(player, key)
+	if key ~= "coin" and key ~= "advanced" then
+		return { ok = false, error = "That egg is not available." }
 	end
-	local egg = PetConfig.GetEgg(arenaIndex)
+	local egg = PetConfig.GetWorldEgg(key)
 	if not egg or egg.enabled ~= true or egg.kind ~= "coins" then
 		return { ok = false, error = "That egg is not available." }
 	end
-	local position = WorldLayout.FindArenaEgg(arenaIndex)
-	if not position or not HeroService.Near(player, position, WorldLayout.Radii.Egg) then
+	local position = key == "advanced" and WorldLayout.AdvancedEgg() or WorldLayout.CoinEgg()
+	if not HeroService.Near(player, position, WorldLayout.Radii.Egg) then
 		return { ok = false, error = "Move closer to the egg." }
 	end
 	local data = PlayerData.Get(player)
-	if not data or data.selectedHero == "" then
-		return { ok = false, error = "Select a hero." }
-	end
-	local hero = data.heroes[data.selectedHero]
-	if not hero.unlockedArenas[tostring(arenaIndex)] then
-		return { ok = false, error = "Unlock the matching arena with your active hero." }
+	if not data or data.selectedHero ~= "Warrior" then
+		return { ok = false, error = "World 0 has one hero: the Warrior." }
 	end
 	local paid, payError = EconomyService.TrySpend(player, egg.cost)
 	if not paid then
@@ -80,10 +80,12 @@ function EggService.InspectRobux(player, specialIndex)
 	if not egg then
 		return { ok = false, error = "Invalid showcase." }
 	end
-	local position = WorldLayout.FindSpecialEgg(specialIndex)
-	if position and not HeroService.Near(player, position, WorldLayout.Radii.Egg) and not HeroService.InLobby(player) then
+	local position = WorldLayout.PremiumEgg()
+	if not HeroService.Near(player, position, WorldLayout.Radii.Egg) then
 		return { ok = false, error = "Move closer to the showcase." }
 	end
+	local premium = PetConfig.GetWorldEgg("premium")
+	egg = premium or egg
 	Notifier.Send(player, "info", egg.name .. " cannot be purchased. No Product ID is configured. Odds are on the sign.")
 	return {
 		ok = false,
@@ -92,12 +94,19 @@ function EggService.InspectRobux(player, specialIndex)
 	}
 end
 
+function EggService.OpenBest(player)
+	return EggService.OpenWorld(player, "advanced")
+end
+
 function EggService.Bind(ctx)
 	ctx.services.RemotesService.Bind(ctx, "OpenEgg", shared("GameConfig").Rates.OpenEgg, function(player, payload)
-		if payload.kind == "robux" then
-			return EggService.InspectRobux(player, payload.specialIndex)
+		if payload.kind == "robux" or payload.worldEgg == "premium" then
+			return EggService.InspectRobux(player, payload.specialIndex or 1)
 		end
-		return EggService.OpenArena(player, payload.arenaIndex)
+		if payload.worldEgg == "coin" or payload.worldEgg == "advanced" then
+			return EggService.OpenWorld(player, payload.worldEgg)
+		end
+		return { ok = false, error = Strings.Error.WorldEggOnly }
 	end)
 end
 

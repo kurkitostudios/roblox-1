@@ -8,8 +8,8 @@ local AbilityConfig = {
 	Warrior = {
 		{
 			id = "spinning_slash",
-			name = "Spinning Slash",
-			description = "Hits every nearby enemy.",
+			name = "Heavy Sweep",
+			description = "A wide club sweep that hits every nearby enemy.",
 			masteryRequired = 10,
 			cooldown = 7,
 			mana = 0,
@@ -20,8 +20,8 @@ local AbilityConfig = {
 		},
 		{
 			id = "steel_skin",
-			name = "Steel Skin",
-			description = "Reduces damage taken for a few seconds.",
+			name = "Hide Guard",
+			description = "Bone and hide reduce damage taken for a few seconds.",
 			masteryRequired = 25,
 			cooldown = 14,
 			mana = 0,
@@ -32,8 +32,8 @@ local AbilityConfig = {
 		},
 		{
 			id = "fury",
-			name = "Fury",
-			description = "Increases damage for a few seconds.",
+			name = "Primal Fury",
+			description = "A tribal fury that increases damage for a few seconds.",
 			masteryRequired = 50,
 			cooldown = 20,
 			mana = 0,

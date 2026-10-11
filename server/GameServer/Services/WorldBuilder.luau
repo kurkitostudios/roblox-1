@@ -1,5 +1,5 @@
--- Mondo 1 idempotente. Se BuildId coincide non ricostruisce le parti.
--- Le posizioni di gameplay restano in WorldLayout. Le decorazioni non collidono.
+-- Mondo 0 idempotente. Se BuildId coincide non ricostruisce le parti.
+-- Lobby e Arena 1 sono la build visiva. Le arene 2–15 restano giocabili, non rifinite.
 
 local Lighting = game:GetService("Lighting")
 
@@ -11,9 +11,16 @@ local PetConfig = shared("PetConfig")
 local Strings = shared("Strings")
 local WorldTextConfig = shared("WorldTextConfig")
 local PropKit = shared("PropKit")
+local TribalKit = shared("TribalKit")
 local EggService = require(script.Parent.EggService)
 
 local WorldBuilder = {}
+
+local EARTH = Color3.fromRGB(116, 86, 54)
+local GRASS = Color3.fromRGB(86, 112, 62)
+local WOOD = Color3.fromRGB(92, 64, 40)
+local BONE = Color3.fromRGB(214, 196, 164)
+local RED = Color3.fromRGB(138, 42, 36)
 
 local function ensureEffect(className, name, parent)
 	local existing = parent:FindFirstChild(name)
@@ -42,37 +49,37 @@ local function preparePlace()
 end
 
 local function buildLighting()
-	Lighting.ClockTime = 16.1
-	Lighting.Brightness = 2.35
+	Lighting.ClockTime = 17.35
+	Lighting.Brightness = 2.15
 	Lighting.GlobalShadows = true
-	Lighting.Ambient = Color3.fromRGB(92, 90, 104)
-	Lighting.OutdoorAmbient = Color3.fromRGB(156, 154, 166)
-	Lighting.EnvironmentDiffuseScale = 0.35
-	Lighting.EnvironmentSpecularScale = 0.25
-	Lighting.ShadowSoftness = 0.3
+	Lighting.Ambient = Color3.fromRGB(110, 86, 68)
+	Lighting.OutdoorAmbient = Color3.fromRGB(186, 140, 102)
+	Lighting.EnvironmentDiffuseScale = 0.4
+	Lighting.EnvironmentSpecularScale = 0.2
+	Lighting.ShadowSoftness = 0.35
 
 	local atmosphere = ensureEffect("Atmosphere", "KurkitoAtmosphere", Lighting)
-	atmosphere.Density = 0.22
-	atmosphere.Offset = 0.15
-	atmosphere.Color = Color3.fromRGB(198, 204, 220)
-	atmosphere.Decay = Color3.fromRGB(110, 104, 130)
-	atmosphere.Glare = 0.12
-	atmosphere.Haze = 0.8
+	atmosphere.Density = 0.28
+	atmosphere.Offset = 0.18
+	atmosphere.Color = Color3.fromRGB(255, 196, 150)
+	atmosphere.Decay = Color3.fromRGB(120, 78, 52)
+	atmosphere.Glare = 0.18
+	atmosphere.Haze = 1.1
 
 	local bloom = ensureEffect("BloomEffect", "KurkitoBloom", Lighting)
-	bloom.Intensity = 0.35
-	bloom.Size = 18
-	bloom.Threshold = 1.85
+	bloom.Intensity = 0.28
+	bloom.Size = 16
+	bloom.Threshold = 1.9
 
 	local correction = ensureEffect("ColorCorrectionEffect", "KurkitoColor", Lighting)
 	correction.Brightness = 0.02
-	correction.Contrast = 0.06
-	correction.Saturation = 0.08
-	correction.TintColor = Color3.fromRGB(255, 248, 240)
+	correction.Contrast = 0.08
+	correction.Saturation = 0.12
+	correction.TintColor = Color3.fromRGB(255, 232, 210)
 
 	local sun = ensureEffect("SunRaysEffect", "KurkitoSun", Lighting)
-	sun.Intensity = 0.06
-	sun.Spread = 0.4
+	sun.Intensity = 0.08
+	sun.Spread = 0.55
 end
 
 local function decorateArena(root, arena, center)
@@ -88,13 +95,7 @@ local function decorateArena(root, arena, center)
 		Vector3.new(center.X - half + 6, y, center.Z),
 		Vector3.new(center.X + half - 6, y, center.Z),
 	}
-	if decor == "crypt" then
-		PropKit.Pillar(root, "PillarA", spots[1], 7, arena.wall, Enum.Material.Slate)
-		PropKit.Pillar(root, "PillarB", spots[2], 7, arena.wall, Enum.Material.Slate)
-		PropKit.Coffin(root, "CoffinA", spots[3], 0.4)
-		PropKit.Torch(root, "TorchA", spots[5], accent, false)
-		PropKit.Torch(root, "TorchB", spots[6], accent, false)
-	elseif decor == "graveyard" then
+	if decor == "graveyard" then
 		PropKit.Grave(root, "GraveA", spots[1])
 		PropKit.Grave(root, "GraveB", spots[2])
 		PropKit.Tree(root, "DeadTree", spots[3], "dead")
@@ -150,7 +151,7 @@ local function decorateArena(root, arena, center)
 		PropKit.Banner(root, "RoyalB", spots[2], Color3.fromRGB(40, 48, 90), 0)
 		PropKit.Statue(root, "KnightStatue", spots[3], Color3.fromRGB(180, 186, 198))
 		PropKit.Pillar(root, "Court", spots[6], 8, Color3.fromRGB(90, 94, 110), Enum.Material.Marble)
-	else
+	elseif decor ~= "gravewilds" then
 		PropKit.Crystal(root, "VoidA", spots[1], accent, 1.5)
 		PropKit.Crystal(root, "VoidB", spots[2], Color3.fromRGB(90, 40, 160), 1.2)
 		PropKit.Pillar(root, "AbyssA", spots[3], 9, Color3.fromRGB(30, 24, 44), Enum.Material.Basalt)
@@ -158,13 +159,11 @@ local function decorateArena(root, arena, center)
 	end
 end
 
-local function buildArena(arenas, paths, arena)
-	local center = WorldLayout.ArenaCenter(arena.index)
+local function buildBoxedArena(root, paths, arena, center)
 	local size = WorldLayout.ArenaSize
 	local half = size / 2
 	local height = WorldLayout.WallHeight
 	local floorTop = 1
-	local root = PropKit.Folder(arenas, string.format("Arena_%02d", arena.index))
 	local floorPiece = PropKit.Part(root, "Floor", Vector3.new(size, 2, size), CFrame.new(center), arena.floor or arena.color, arena.floorMaterial or Enum.Material.Slate, true, nil, true)
 	PropKit.Light(floorPiece, arena.accent or arena.color, 22, 0.45)
 	PropKit.Part(root, "Inlay", Vector3.new(size - 18, 0.08, size - 18), CFrame.new(center + Vector3.new(0, 1.02, 0)), arena.color, Enum.Material.Slate, false, 0.15)
@@ -186,8 +185,86 @@ local function buildArena(arenas, paths, arena)
 	PropKit.Part(root, "GateFrameL", Vector3.new(1.4, height + 1, 1.6), CFrame.new(center.X - gap / 2, wallY, zSouth - 1.2), arena.accent, Enum.Material.Metal, false)
 	PropKit.Part(root, "GateFrameR", Vector3.new(1.4, height + 1, 1.6), CFrame.new(center.X + gap / 2, wallY, zSouth - 1.2), arena.accent, Enum.Material.Metal, false)
 	PropKit.Part(root, "GateLintel", Vector3.new(gap + 1, 1.2, 1.6), CFrame.new(center.X, floorTop + height + 0.4, zSouth - 1.2), arena.accent, Enum.Material.Metal, false)
+	decorateArena(root, arena, center)
+	return zSouth, gap
+end
 
-	local pad = PropKit.Part(root, "SafePad", Vector3.new(16, 1, 16), CFrame.new(center.X, 1.5, center.Z - 58), Color3.fromRGB(230, 210, 140), Enum.Material.Neon, true, 0.45, false)
+local function buildGraveWilds(root, arena, center)
+	local size = WorldLayout.ArenaSize
+	local half = size / 2
+	local floor = PropKit.Part(root, "Floor", Vector3.new(size, 2, size), CFrame.new(center), arena.floor, Enum.Material.Ground, true, nil, true)
+	PropKit.Part(root, "MudA", Vector3.new(36, 0.08, 22), CFrame.new(center + Vector3.new(-18, 1.05, 8)), Color3.fromRGB(72, 58, 40), Enum.Material.Mud, false)
+	PropKit.Part(root, "MudB", Vector3.new(28, 0.08, 18), CFrame.new(center + Vector3.new(22, 1.05, -6)), Color3.fromRGB(84, 64, 42), Enum.Material.Mud, false)
+	PropKit.Part(root, "Ash", Vector3.new(16, 0.08, 16), CFrame.new(center + Vector3.new(8, 1.06, 24)), Color3.fromRGB(58, 52, 48), Enum.Material.Slate, false, 0.1)
+	PropKit.Light(floor, Color3.fromRGB(255, 120, 60), 18, 0.25)
+
+	local zSouth = center.Z - half
+	local gap = 18
+	local colors = {
+		Color3.fromRGB(92, 78, 64),
+		Color3.fromRGB(74, 64, 54),
+		Color3.fromRGB(110, 96, 80),
+	}
+	local function cliffRun(name, alongZ, fixed, from, to, gapCenter)
+		local length = math.abs(to - from)
+		local count = math.max(3, math.floor(length / 14))
+		for index = 0, count do
+			local alpha = index / count
+			local coord = from + (to - from) * alpha
+			if gapCenter and math.abs(coord - gapCenter) < gap * 0.55 then
+				continue
+			end
+			local height = 12 + (index % 3) * 2.4
+			local depth = 7 + (index % 2) * 2
+			local cf
+			if alongZ then
+				cf = CFrame.new(fixed, 1 + height / 2, coord) * CFrame.Angles(0, 0.08 * (index % 2 == 0 and 1 or -1), 0)
+				TribalKit.Cliff(root, name .. index, cf, Vector3.new(depth, height, 13), colors[(index % #colors) + 1])
+			else
+				cf = CFrame.new(coord, 1 + height / 2, fixed) * CFrame.Angles(0, 0.1, 0)
+				TribalKit.Cliff(root, name .. index, cf, Vector3.new(13, height, depth), colors[(index % #colors) + 1])
+			end
+		end
+	end
+	cliffRun("North", false, center.Z + half - 3, center.X - half + 6, center.X + half - 6, nil)
+	cliffRun("South", false, zSouth + 3, center.X - half + 6, center.X + half - 6, center.X)
+	cliffRun("West", true, center.X - half + 3, center.Z - half + 8, center.Z + half - 8, nil)
+	cliffRun("East", true, center.X + half - 3, center.Z - half + 8, center.Z + half - 8, nil)
+
+	PropKit.Part(root, "GateSeal", Vector3.new(gap - 1, 12, 2.2), CFrame.new(center.X, 7, zSouth + 2), Color3.fromRGB(62, 48, 40), Enum.Material.Wood, true, nil, true)
+	TribalKit.BoneArch(root, "GateArch", Vector3.new(center.X, 1, zSouth - 2), 0)
+	TribalKit.Skull(root, "GateSkull", CFrame.new(center.X, 6.2, zSouth + 1.2), 1.1)
+
+	local edge = half - 18
+	PropKit.Tree(root, "DeadA", Vector3.new(center.X - edge, 1, center.Z - edge + 6), "dead")
+	PropKit.Tree(root, "DeadB", Vector3.new(center.X + edge, 1, center.Z + edge - 8), "dead")
+	PropKit.Tree(root, "DeadC", Vector3.new(center.X - edge + 4, 1, center.Z + edge - 10), "dead")
+	TribalKit.Campfire(root, "ColdCamp", Vector3.new(center.X + edge - 4, 1, center.Z - 8), true)
+	TribalKit.Totem(root, "RuinTotem", Vector3.new(center.X - edge + 2, 1, center.Z + 4), 0.6, RED)
+	TribalKit.Skull(root, "BonePileA", CFrame.new(center.X + edge - 8, 1.6, center.Z + edge - 12), 1.3)
+	TribalKit.Skull(root, "BonePileB", CFrame.new(center.X - edge + 10, 1.5, center.Z - edge + 14), 1)
+	PropKit.Rock(root, "BoulderA", Vector3.new(center.X - edge + 8, 1, center.Z - 4), 1.6, Color3.fromRGB(90, 80, 70))
+	PropKit.Rock(root, "BoulderB", Vector3.new(center.X + edge - 6, 1, center.Z + 16), 1.3, Color3.fromRGB(80, 70, 60))
+	TribalKit.Tuft(root, "ScrubA", Vector3.new(center.X - 50, 1, center.Z + 40), 1.2)
+	TribalKit.Tuft(root, "ScrubB", Vector3.new(center.X + 52, 1, center.Z - 36), 1)
+	PropKit.Part(root, "Ribs", Vector3.new(2.2, 0.3, 1.4), CFrame.new(center.X + edge - 2, 1.3, center.Z - edge + 12) * CFrame.Angles(0, 0.5, 0), BONE, Enum.Material.SmoothPlastic, false)
+	TribalKit.Banner(root, "RuinBanner", Vector3.new(center.X - edge + 6, 1, center.Z - edge + 8), 0.4, RED)
+	PropKit.Part(root, "FallenPost", Vector3.new(6, 0.45, 0.45), CFrame.new(center.X + edge - 10, 1.4, center.Z + 8) * CFrame.Angles(0, 0.6, math.rad(80)), WOOD, Enum.Material.Wood, false)
+	TribalKit.Skull(root, "RuinSkull", CFrame.new(center.X - edge + 12, 1.8, center.Z + edge - 16), 1.2)
+	return zSouth
+end
+
+local function buildArena(arenas, paths, arena)
+	local center = WorldLayout.ArenaCenter(arena.index)
+	local root = PropKit.Folder(arenas, string.format("Arena_%02d", arena.index))
+	local zSouth
+	if arena.index == 1 then
+		zSouth = buildGraveWilds(root, arena, center)
+	else
+		zSouth = buildBoxedArena(root, paths, arena, center)
+	end
+
+	PropKit.Part(root, "SafePad", Vector3.new(16, 1, 16), CFrame.new(center.X, 1.5, center.Z - 58), Color3.fromRGB(196, 154, 96), Enum.Material.Wood, true, 0.2, false)
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "ArenaSpawn_" .. tostring(arena.index)
 	spawn.Anchored = true
@@ -200,128 +277,191 @@ local function buildArena(arenas, paths, arena)
 	spawn.CanCollide = false
 	spawn.Parent = root
 
-	local sign = PropKit.Part(root, "Sign", Vector3.new(1.2, 5.5, 0.4), CFrame.new(center.X - 16, 3.6, zSouth - 8), Color3.fromRGB(48, 40, 34), Enum.Material.Wood, true, nil, true)
+	local sign = PropKit.Part(root, "Sign", Vector3.new(1.2, 5.5, 0.4), CFrame.new(center.X - 16, 3.6, zSouth - 8), WOOD, Enum.Material.Wood, true, nil, true)
 	PropKit.Part(root, "SignPost", Vector3.new(0.4, 5.5, 0.4), sign.CFrame * CFrame.new(0, 0, 0.3), Color3.fromRGB(70, 52, 36), Enum.Material.Wood, true)
 	PropKit.Billboard(sign, Strings.ArenaSign(arena.index, arena.name, arena.mastery, arena.cost), "ArenaName", UDim2.fromOffset(220, 86), Vector3.new(0, 4.2, 0), Color3.new(1, 1, 1))
-	PropKit.Prompt(sign, "Arena", arena.name, "Arena", { ArenaIndex = arena.index }, WorldTextConfig.Prompt("Arena"))
+	PropKit.Prompt(sign, arena.index == 1 and "Enter" or "Arena", arena.name, "Arena", { ArenaIndex = arena.index }, WorldTextConfig.Prompt("Arena"))
 
-	local back = PropKit.Part(root, "ReturnPad", Vector3.new(10, 1, 10), CFrame.new(center.X, 1.6, center.Z - 48), Color3.fromRGB(186, 186, 196), Enum.Material.Marble, true, nil, true)
-	PropKit.Prompt(back, "Lobby", "Return", "Lobby", {}, WorldTextConfig.Prompt("Default"))
+	local back = PropKit.Part(root, "ReturnPad", Vector3.new(10, 1, 10), CFrame.new(center.X, 1.6, center.Z - 48), BONE:Lerp(EARTH, 0.4), Enum.Material.Wood, true, nil, true)
+	PropKit.Prompt(back, "Return", "Lobby", "Lobby", {}, WorldTextConfig.Prompt("Default"))
 
-	decorateArena(root, arena, center)
-
-	if arena.index < 15 then
+	if arena.index > 1 and arena.index < 15 then
 		local nextCenter = WorldLayout.ArenaCenter(arena.index + 1)
-		local fromZ = center.Z + half
-		local toZ = nextCenter.Z - half
+		local fromZ = center.Z + WorldLayout.ArenaHalf()
+		local toZ = nextCenter.Z - WorldLayout.ArenaHalf()
 		local mid = (fromZ + toZ) / 2
 		local length = math.abs(toZ - fromZ)
-		PropKit.Part(paths, "Bridge_" .. arena.index, Vector3.new(28, 2, length), CFrame.new(0, 0, mid), Color3.fromRGB(118, 112, 100), Enum.Material.Cobblestone, true, nil, true)
-		PropKit.FenceRun(paths, "RailL_" .. arena.index, Vector3.new(-14, 1, fromZ), Vector3.new(-14, 1, toZ), Color3.fromRGB(96, 74, 48))
-		PropKit.FenceRun(paths, "RailR_" .. arena.index, Vector3.new(14, 1, fromZ), Vector3.new(14, 1, toZ), Color3.fromRGB(96, 74, 48))
+		PropKit.Part(paths, "Bridge_" .. arena.index, Vector3.new(28, 2, length), CFrame.new(0, 0, mid), EARTH, Enum.Material.Ground, true, nil, true)
+		PropKit.FenceRun(paths, "RailL_" .. arena.index, Vector3.new(-14, 1, fromZ), Vector3.new(-14, 1, toZ), WOOD)
+		PropKit.FenceRun(paths, "RailR_" .. arena.index, Vector3.new(14, 1, fromZ), Vector3.new(14, 1, toZ), WOOD)
 	end
 end
 
-local function buildStairs(parent, name, fromZ, toZ, fromTop, toTop)
-	local steps = 8
-	local length = math.abs(toZ - fromZ)
-	local depth = length / steps
-	local direction = toZ > fromZ and 1 or -1
-	local rise = (toTop - fromTop) / steps
-	for step = 1, steps do
-		local top = fromTop + rise * step
-		local centerZ = fromZ + direction * (depth * (step - 0.5))
-		PropKit.Part(parent, name .. "_" .. step, Vector3.new(28, 2, depth), CFrame.new(0, top - 1, centerZ), Color3.fromRGB(150, 136, 108), Enum.Material.Cobblestone, true, nil, true)
-	end
-	PropKit.Part(parent, name .. "WallL", Vector3.new(2.2, math.abs(toTop - fromTop) + 4, length), CFrame.new(-18, (fromTop + toTop) * 0.5, (fromZ + toZ) * 0.5), Color3.fromRGB(120, 100, 74), Enum.Material.Slate, true, nil, true)
-	PropKit.Part(parent, name .. "WallR", Vector3.new(2.2, math.abs(toTop - fromTop) + 4, length), CFrame.new(18, (fromTop + toTop) * 0.5, (fromZ + toZ) * 0.5), Color3.fromRGB(120, 100, 74), Enum.Material.Slate, true, nil, true)
+local function serviceShrine(parent, name, position, color, text, action, category)
+	local cf = CFrame.new(position.X, 1, position.Z)
+	local pad = PropKit.Cylinder(parent, name, Vector3.new(0.8, 14, 14), cf * CFrame.new(0, 0.35, 0) * CFrame.Angles(0, 0, math.rad(90)), EARTH, Enum.Material.Ground, true)
+	TribalKit.Totem(parent, name .. "Totem", Vector3.new(position.X, 1, position.Z), 0, color)
+	local post = PropKit.Part(parent, name .. "Post", Vector3.new(0.4, 5, 0.4), cf * CFrame.new(0, 8.2, -2.2), WOOD, Enum.Material.Wood, true)
+	PropKit.Billboard(post, text, category, UDim2.fromOffset(200, 72), Vector3.new(0, 1.6, 0), Color3.fromRGB(255, 236, 214))
+	local promptName = string.match(text, "^[^\n]+") or text
+	PropKit.Prompt(post, "Interact", promptName, action, nil, WorldTextConfig.Prompt("Service"))
+	return pad
 end
 
-local function buildEggs(paths, world)
-	local eggRoot = PropKit.Folder(world, "EggZone")
-	local terraces = WorldLayout.EggTerraces()
-	PropKit.Part(paths, "PathEggs", Vector3.new(28, 2, 150), CFrame.new(0, 0, -185), Color3.fromRGB(118, 112, 100), Enum.Material.Cobblestone, true, nil, true)
-	PropKit.Part(eggRoot, "Hillside", Vector3.new(280, 18, 460), CFrame.new(0, -6, -500), Color3.fromRGB(96, 118, 72), Enum.Material.Grass, false, nil, true)
-	for index, terrace in ipairs(terraces) do
-		local center = terrace.position
-		local slab = PropKit.Part(eggRoot, "Terrace_" .. index, Vector3.new(230, 2, 100), CFrame.new(center), Color3.fromRGB(214, 186, 132), Enum.Material.Sandstone, true, nil, true)
-		if index == 1 then
-			PropKit.Light(slab, Color3.fromRGB(255, 214, 150), 18, 0.4)
-		end
-		PropKit.Part(eggRoot, "RailL_" .. index, Vector3.new(3, 4.5, 100), CFrame.new(center + Vector3.new(-113, 3, 0)), Color3.fromRGB(122, 96, 68), Enum.Material.Slate, true, nil, true)
-		PropKit.Part(eggRoot, "RailR_" .. index, Vector3.new(3, 4.5, 100), CFrame.new(center + Vector3.new(113, 3, 0)), Color3.fromRGB(122, 96, 68), Enum.Material.Slate, true, nil, true)
-		local sign = PropKit.Part(eggRoot, "TerraceSign_" .. index, Vector3.new(0.4, 4.2, 6), CFrame.new(center + Vector3.new(0, 3.2, -42)), Color3.fromRGB(70, 52, 36), Enum.Material.Wood, true)
-		PropKit.Billboard(sign, "Egg Terrace " .. index, "InfoSign", UDim2.fromOffset(200, 48), Vector3.new(0, 3.2, 0), Color3.fromRGB(255, 236, 200))
-		PropKit.Tree(eggRoot, "TerraceTreeL_" .. index, center + Vector3.new(-96, 1, 30), index == 3 and "pine" or "oak")
-		PropKit.Rock(eggRoot, "TerraceRock_" .. index, center + Vector3.new(96, 1, 28), 1, Color3.fromRGB(130, 118, 96))
-		for slot, arenaIndex in ipairs(terrace.arenas) do
-			local eggPos = WorldLayout.EggPosition(terrace, slot)
-			local eggDef = PetConfig.GetEgg(arenaIndex)
-			local column = PropKit.Pedestal(eggRoot, "Pedestal_" .. arenaIndex, eggPos - Vector3.new(0, 3.4, 0), eggDef.color:Lerp(Color3.fromRGB(40, 32, 24), 0.45))
-			PropKit.Egg(eggRoot, "Egg_" .. arenaIndex, eggPos, eggDef.color, false)
-			local odds = EggService.OddsText(eggDef.pool)
-			PropKit.Billboard(column, Strings.EggSign(arenaIndex, eggDef.cost, odds), "EggPrice", UDim2.fromOffset(230, 140), Vector3.new(0, 5.2, 0), Color3.new(1, 1, 1))
-			PropKit.Prompt(column, "Open", eggDef.cost .. " Coins", "OpenEgg", { ArenaIndex = arenaIndex }, WorldTextConfig.Prompt("Egg"))
-		end
-		local special = PetConfig.SpecialEggs[terrace.special]
-		local specialPos = WorldLayout.EggPosition(terrace, 6)
-		local specialPad = PropKit.Pedestal(eggRoot, "RobuxPad_" .. index, specialPos - Vector3.new(0, 3.2, 0), Color3.fromRGB(48, 40, 32))
-		PropKit.Egg(eggRoot, "RobuxEgg_" .. index, specialPos + Vector3.new(0, 0.3, 0), special.color, true)
-		PropKit.Billboard(specialPad, Strings.RobuxEggSign(special.name, EggService.OddsText(special.pool)), "EggPetInfo", UDim2.fromOffset(240, 160), Vector3.new(0, 5.6, 0), Color3.fromRGB(255, 220, 140))
-		PropKit.Prompt(specialPad, "Info", "Not for sale", "RobuxEgg", { SpecialIndex = terrace.special }, WorldTextConfig.Prompt("Egg"))
+local function buildVillage(lobby)
+	local camp = Vector3.new(-206, 1, -96)
+	local huts = {
+		Vector3.new(-262, 1, -150),
+		Vector3.new(-214, 1, -168),
+		Vector3.new(-158, 1, -146),
+		Vector3.new(-268, 1, -78),
+		Vector3.new(-176, 1, -58),
+		Vector3.new(-230, 1, -40),
+	}
+	for index, spot in ipairs(huts) do
+		local yaw = TribalKit.FacingYaw(spot, camp)
+		TribalKit.Hut(lobby, "Hut" .. index, spot, yaw, index % 3 == 0 and 1.05 or 0.92)
 	end
-	local first = terraces[1].position
-	local second = terraces[2].position
-	local third = terraces[3].position
-	buildStairs(eggRoot, "Stairs12", first.Z - 50, second.Z + 50, 1, 17)
-	buildStairs(eggRoot, "Stairs23", second.Z - 50, third.Z + 50, 17, 33)
+	TribalKit.Campfire(lobby, "VillageFire", camp, true)
+	TribalKit.Campfire(lobby, "VillageFireB", Vector3.new(-250, 1, -112), true)
+	TribalKit.LogBench(lobby, "LogA", CFrame.new(-190, 1.6, -88) * CFrame.Angles(0, 0.4, 0))
+	TribalKit.LogBench(lobby, "LogB", CFrame.new(-224, 1.6, -78) * CFrame.Angles(0, 1.1, 0))
+	TribalKit.Totem(lobby, "VillageTotemA", Vector3.new(-150, 1, -96), 1.2, RED)
+	TribalKit.Totem(lobby, "VillageTotemB", Vector3.new(-248, 1, -24), 0.4, Color3.fromRGB(90, 48, 36))
+	TribalKit.Banner(lobby, "FlagA", Vector3.new(-132, 1, -70), 1.1, RED)
+	TribalKit.Banner(lobby, "FlagB", Vector3.new(-132, 1, -120), 0.8, Color3.fromRGB(92, 42, 36))
+	PropKit.FenceRun(lobby, "FenceWest", Vector3.new(-300, 1, -200), Vector3.new(-300, 1, 10), WOOD)
+	PropKit.FenceRun(lobby, "FenceSouth", Vector3.new(-300, 1, -200), Vector3.new(-120, 1, -200), WOOD)
+	PropKit.Tree(lobby, "ShadeA", Vector3.new(-290, 1, -40), "oak")
+	PropKit.Tree(lobby, "ShadeB", Vector3.new(-120, 1, -170), "oak")
+	PropKit.Tree(lobby, "DeadEdge", Vector3.new(-300, 1, -160), "dead")
+	PropKit.Rock(lobby, "VillageRockA", Vector3.new(-140, 1, -40), 1.2, Color3.fromRGB(100, 92, 82))
+	PropKit.Rock(lobby, "VillageRockB", Vector3.new(-280, 1, -130), 1.5, Color3.fromRGB(88, 80, 72))
+	for index = 1, 8 do
+		TribalKit.Tuft(lobby, "Grass" .. index, Vector3.new(-150 - (index * 17) % 120, 1, -30 - (index * 23) % 140), 0.8 + (index % 3) * 0.25)
+	end
+	TribalKit.Crate(lobby, "StoreCrate", CFrame.new(-188, 1.8, -60))
+	TribalKit.Basket(lobby, "StoreBasket", CFrame.new(-198, 1.7, -124))
+	TribalKit.Skull(lobby, "RackSkull", CFrame.new(-170, 2.2, -70), 0.9)
+	TribalKit.LogBench(lobby, "LogC", CFrame.new(-240, 1.6, -130) * CFrame.Angles(0, 0.8, 0))
+	PropKit.Rock(lobby, "VillageRockC", Vector3.new(-160, 1, -160), 1.1, Color3.fromRGB(96, 88, 78))
 end
 
-local function buildBoards(paths, world)
-	local root = PropKit.Folder(world, "Leaderboards")
+local function buildMerchant(lobby)
+	local spot = WorldLayout.Merchant()
+	local stall, promptPart = TribalKit.Stall(lobby, "MerchantStall", Vector3.new(spot.X, 1, spot.Z), math.rad(-90))
+	PropKit.Prompt(promptPart, "Talk to Merchant", "Chief", "Merchant", nil, WorldTextConfig.Prompt("Merchant"))
+	return stall
+end
+
+local function buildFeaturedEggs(lobby)
+	local eggRoot = PropKit.Folder(lobby, "EggZone")
+	local coinEgg = PetConfig.GetWorldEgg("coin")
+	local advancedEgg = PetConfig.GetWorldEgg("advanced")
+	local premium = PetConfig.GetWorldEgg("premium")
+	local specs = {
+		{
+			name = "CoinEgg",
+			position = WorldLayout.CoinEgg(),
+			color = Color3.fromRGB(196, 150, 96),
+			kind = "coin",
+			text = Strings.CoinEggSign(coinEgg.cost, EggService.OddsText(coinEgg.pool)),
+			category = "EggPrice",
+			action = "Open",
+			object = "Coin Egg",
+			remote = "OpenWorldEgg",
+			attributes = { WorldEgg = "coin" },
+		},
+		{
+			name = "AdvancedEgg",
+			position = WorldLayout.AdvancedEgg(),
+			color = Color3.fromRGB(150, 78, 46),
+			kind = "advanced",
+			text = Strings.AdvancedEggSign(advancedEgg.cost),
+			category = "EggPrice",
+			action = "Open",
+			object = "Advanced Coin Egg",
+			remote = "OpenWorldEgg",
+			attributes = { WorldEgg = "advanced" },
+		},
+		{
+			name = "PremiumEgg",
+			position = WorldLayout.PremiumEgg(),
+			color = Color3.fromRGB(236, 206, 150),
+			kind = "premium",
+			text = Strings.PremiumEggSign(EggService.OddsText(premium.pool)),
+			category = "EggPetInfo",
+			action = "Inspect",
+			object = "Premium Egg",
+			remote = "RobuxEgg",
+			attributes = { SpecialIndex = 1 },
+		},
+	}
+	for _, spec in ipairs(specs) do
+		local _, column = TribalKit.EggShrine(eggRoot, spec.name, Vector3.new(spec.position.X, 1, spec.position.Z), spec.color, spec.kind)
+		PropKit.Billboard(column, spec.text, spec.category, UDim2.fromOffset(220, 120), Vector3.new(0, 4.2, 0), Color3.fromRGB(255, 236, 210))
+		PropKit.Prompt(column, spec.action, spec.object, spec.remote, spec.attributes, WorldTextConfig.Prompt("Egg"))
+	end
+	TribalKit.Campfire(eggRoot, "EggFire", Vector3.new(0, 1, -132), true)
+	PropKit.Part(eggRoot, "EggPath", Vector3.new(16, 0.08, 70), CFrame.new(0, 1.08, -120), EARTH, Enum.Material.Ground, false)
+end
+
+local function buildBoards(lobby)
+	local root = PropKit.Folder(lobby, "Leaderboards")
 	local origin = WorldLayout.LeaderboardOrigin()
-	PropKit.Part(root, "Plaza", Vector3.new(180, 2, 90), CFrame.new(origin), Color3.fromRGB(214, 210, 204), Enum.Material.Marble, true, nil, true)
-	PropKit.Part(paths, "PathBoards", Vector3.new(80, 2, 24), CFrame.new(-160, 0, 0), Color3.fromRGB(118, 112, 100), Enum.Material.Cobblestone, true, nil, true)
-	local titles = {
-		{ id = "Rebirth", title = "MOST REBIRTH" },
-		{ id = "Time", title = "MOST TIME PLAYED" },
-		{ id = "Kills", title = "MOST KILLS" },
-	}
+	PropKit.Part(root, "Avenue", Vector3.new(120, 0.12, 360), CFrame.new(origin.X - 10, 1.08, origin.Z), Color3.fromRGB(102, 78, 52), Enum.Material.Ground, false)
+	local entry = PropKit.Part(root, "AvenueSign", Vector3.new(0.4, 4, 8), CFrame.new(origin.X - 48, 3.2, origin.Z - 150), WOOD, Enum.Material.Wood, true)
+	PropKit.Billboard(entry, "HALL OF THE TRIBE", "InfoSign", UDim2.fromOffset(200, 40), Vector3.new(0, 2.6, 0), BONE)
 	local metals = {
-		{ color = Color3.fromRGB(212, 170, 64), material = Enum.Material.Metal },
-		{ color = Color3.fromRGB(186, 192, 200), material = Enum.Material.Metal },
-		{ color = Color3.fromRGB(168, 112, 64), material = Enum.Material.Metal },
+		{ color = Color3.fromRGB(196, 154, 78), material = Enum.Material.Wood },
+		{ color = Color3.fromRGB(168, 164, 156), material = Enum.Material.Slate },
+		{ color = Color3.fromRGB(150, 96, 62), material = Enum.Material.Wood },
 	}
-	for boardIndex, board in ipairs(titles) do
-		local headerPos = origin + Vector3.new((boardIndex - 2) * 52, 8, -28)
-		local header = PropKit.Part(root, "Header_" .. board.id, Vector3.new(28, 5, 0.6), CFrame.new(headerPos), Color3.fromRGB(28, 26, 40), Enum.Material.SmoothPlastic, true)
-		PropKit.Part(root, "HeaderTrim_" .. board.id, Vector3.new(28, 0.25, 0.7), header.CFrame * CFrame.new(0, -2.4, 0), Color3.fromRGB(212, 176, 90), Enum.Material.Metal, false)
-		PropKit.Billboard(header, board.title, "Podium", UDim2.fromOffset(240, 42), Vector3.new(0, 3.4, 0), Color3.fromRGB(240, 210, 120))
+	for boardIndex, board in ipairs(WorldLayout.LeaderboardBoards()) do
+		local anchor = WorldLayout.BoardAnchor(boardIndex)
+		local wall = PropKit.Part(root, "Board_" .. board.id, Vector3.new(16, 11, 0.8), CFrame.lookAt(Vector3.new(anchor.X, 6.5, anchor.Z), Vector3.new(anchor.X - 10, 6.5, anchor.Z)), Color3.fromRGB(48, 32, 24), Enum.Material.Wood, true, nil, true)
+		PropKit.Part(root, "BoardTrim_" .. board.id, Vector3.new(16.4, 0.35, 0.9), wall.CFrame * CFrame.new(0, 5.3, 0), BONE, Enum.Material.Slate, false)
+		TribalKit.Skull(root, "BoardSkull_" .. board.id, wall.CFrame * CFrame.new(0, 4.6, -0.6), 0.8)
+		PropKit.Billboard(wall, board.title, "Podium", UDim2.fromOffset(200, 36), Vector3.new(0, 6.4, 0), Color3.fromRGB(255, 220, 160))
+		local gui = Instance.new("SurfaceGui")
+		gui.Name = "BoardGui"
+		gui.Face = Enum.NormalId.Front
+		gui.CanvasSize = Vector2.new(400, 280)
+		gui.Parent = wall
+		WorldTextConfig.Mark(gui, "Podium")
+		local label = Instance.new("TextLabel")
+		label.Name = "Rankings"
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.fromScale(1, 1)
+		label.Font = Enum.Font.GothamBold
+		label.TextScaled = true
+		label.TextWrapped = true
+		label.TextColor3 = Color3.fromRGB(255, 236, 214)
+		label.TextYAlignment = Enum.TextYAlignment.Top
+		label.Text = "—"
+		label.Parent = gui
 		for place = 1, 3 do
 			local center, size = WorldLayout.PodiumSpec(boardIndex, place)
 			local metal = metals[place]
-			local podium = PropKit.Part(root, WorldLayout.PodiumName(board.id, place), size, CFrame.new(center), metal.color, metal.material, true, nil, true)
-			PropKit.Part(root, "PodiumBase_" .. board.id .. place, Vector3.new(size.X + 1.4, 0.4, size.Z + 1.4), CFrame.new(center - Vector3.new(0, size.Y / 2, 0)), metal.color:Lerp(Color3.new(0, 0, 0), 0.35), Enum.Material.Slate, true)
+			local look = CFrame.lookAt(center, Vector3.new(center.X - 10, center.Y, center.Z))
+			local podium = PropKit.Part(root, WorldLayout.PodiumName(board.id, place), size, look, metal.color, metal.material, true, nil, true)
 			podium:SetAttribute("PodiumBoard", board.id)
 			podium:SetAttribute("PodiumPlace", place)
-			if place == 1 then
-				PropKit.Light(podium, metal.color, 10, 0.35)
-			end
-			local gui = Instance.new("SurfaceGui")
-			gui.Name = "PodiumGui"
-			gui.Face = Enum.NormalId.Front
-			gui.CanvasSize = Vector2.new(200, 120)
-			gui.Parent = podium
-			WorldTextConfig.Mark(gui, "Podium")
-			local label = Instance.new("TextLabel")
-			label.Name = "NameLabel"
-			label.BackgroundTransparency = 1
-			label.Size = UDim2.new(1, 0, 0.55, 0)
-			label.Font = Enum.Font.GothamBold
-			label.TextScaled = true
-			label.TextColor3 = Color3.new(1, 1, 1)
-			label.Text = "—"
-			label.Parent = gui
+			local face = Instance.new("SurfaceGui")
+			face.Name = "PodiumGui"
+			face.Face = Enum.NormalId.Front
+			face.CanvasSize = Vector2.new(200, 120)
+			face.Parent = podium
+			WorldTextConfig.Mark(face, "Podium")
+			local nameLabel = Instance.new("TextLabel")
+			nameLabel.Name = "NameLabel"
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.Size = UDim2.new(1, 0, 0.55, 0)
+			nameLabel.Font = Enum.Font.GothamBold
+			nameLabel.TextScaled = true
+			nameLabel.TextColor3 = Color3.new(1, 1, 1)
+			nameLabel.Text = "—"
+			nameLabel.Parent = face
 			local value = Instance.new("TextLabel")
 			value.Name = "ValueLabel"
 			value.BackgroundTransparency = 1
@@ -329,101 +469,89 @@ local function buildBoards(paths, world)
 			value.Size = UDim2.new(1, 0, 0.45, 0)
 			value.Font = Enum.Font.Gotham
 			value.TextScaled = true
-			value.TextColor3 = Color3.fromRGB(255, 220, 140)
+			value.TextColor3 = Color3.fromRGB(255, 220, 160)
 			value.Text = ""
-			value.Parent = gui
+			value.Parent = face
 		end
+		TribalKit.Banner(root, "AvenueFlag" .. boardIndex, Vector3.new(anchor.X + 6, 1, anchor.Z), math.rad(90), boardIndex % 2 == 0 and RED or Color3.fromRGB(92, 48, 32))
 	end
 	PropKit.Folder(root, "PodiumFigures")
 end
 
-local function servicePad(parent, name, position, color, text, action, category)
-	local pad = PropKit.Part(parent, name, Vector3.new(16, 1.2, 16), CFrame.new(position.X, 0.6, position.Z), color, Enum.Material.Marble, true, nil, true)
-	local post = PropKit.Part(parent, name .. "Post", Vector3.new(1.2, 7, 1.2), CFrame.new(position.X, 4.2, position.Z), color:Lerp(Color3.new(1, 1, 1), 0.25), Enum.Material.Metal, true)
-	local crystal = PropKit.Part(parent, name .. "Crystal", Vector3.new(1.3, 1.3, 1.3), post.CFrame * CFrame.new(0, 3.6, 0), color, Enum.Material.Neon, false, 0.1)
-	crystal.Shape = Enum.PartType.Ball
-	PropKit.Light(crystal, color, 12, 0.45)
-	PropKit.Billboard(post, text, category, UDim2.fromOffset(200, 72), Vector3.new(0, 5.2, 0), Color3.new(1, 1, 1))
-	PropKit.Prompt(post, "Interact", text, action, nil, WorldTextConfig.Prompt("Service"))
-	PropKit.Arch(parent, name .. "Arch", Vector3.new(position.X, 1, position.Z - 10), color, 0)
-	return pad
-end
-
-local function buildServices(paths, world)
-	local root = PropKit.Folder(world, "Services")
-	PropKit.Part(root, "EastFloor", Vector3.new(280, 2, 240), CFrame.new(300, 0, 40), Color3.fromRGB(74, 68, 92), Enum.Material.Slate, true, nil, true)
-	PropKit.Part(paths, "PathEast", Vector3.new(70, 2, 28), CFrame.new(150, 0, 20), Color3.fromRGB(118, 112, 100), Enum.Material.Cobblestone, true, nil, true)
-	servicePad(root, "HeroPad", WorldLayout.HeroSwitch(), Color3.fromRGB(176, 72, 58), "Heroes\nChange character", "Hero", "Interaction")
-	servicePad(root, "UpgradePad", WorldLayout.Upgrades(), Color3.fromRGB(80, 140, 200), "Upgrades\nOpen the menu", "UpgradeInfo", "UpgradeStation")
-	servicePad(root, "FusionPad", WorldLayout.Fusion(), Color3.fromRGB(90, 190, 210), "Pet Fusion\n5 identical = 1 evolved", "FusionInfo", "Interaction")
-	servicePad(root, "RebirthPad", WorldLayout.Rebirth(), Color3.fromRGB(140, 80, 190), "Rebirth Altar\nMastery 50", "Rebirth", "RebirthInfo")
-	PropKit.Banner(root, "HeroFlag", WorldLayout.HeroSwitch() + Vector3.new(10, 0, -8), Color3.fromRGB(176, 72, 58), 0.8)
-	PropKit.Banner(root, "RebirthFlag", WorldLayout.Rebirth() + Vector3.new(-12, 0, 8), Color3.fromRGB(150, 80, 200), -0.4)
+local function buildServices(lobby)
+	local root = PropKit.Folder(lobby, "Services")
+	serviceShrine(root, "HeroPad", WorldLayout.HeroSwitch(), Color3.fromRGB(168, 104, 58), "Warrior\nWorld 0 hero", "Hero", "Interaction")
+	serviceShrine(root, "UpgradePad", WorldLayout.Upgrades(), Color3.fromRGB(92, 122, 86), "Upgrades\nSpend coins", "UpgradeInfo", "UpgradeStation")
+	serviceShrine(root, "FusionPad", WorldLayout.Fusion(), Color3.fromRGB(120, 96, 64), "Pet Fusion\n5 identical = 1 evolved", "FusionInfo", "Interaction")
+	serviceShrine(root, "RebirthPad", WorldLayout.Rebirth(), Color3.fromRGB(140, 64, 48), "Rebirth Altar\nMastery 50", "Rebirth", "RebirthInfo")
 
 	local portalPos = WorldLayout.Portal()
-	PropKit.Part(root, "PortalPlatform", Vector3.new(40, 2, 40), CFrame.new(portalPos.X, 0, portalPos.Z), Color3.fromRGB(58, 58, 68), Enum.Material.Basalt, true, nil, true)
-	PropKit.Part(paths, "PathPortal", Vector3.new(20, 2, 80), CFrame.new(400, 0, 160), Color3.fromRGB(90, 90, 96), Enum.Material.Basalt, true, nil, true)
-	local ring = PropKit.Part(root, "World2Ring", Vector3.new(16, 16, 2), CFrame.new(portalPos), Color3.fromRGB(70, 74, 96), Enum.Material.Metal, true)
-	ring.Shape = Enum.PartType.Cylinder
-	ring.CFrame = CFrame.new(portalPos) * CFrame.Angles(0, 0, math.rad(90))
-	local lockBar = PropKit.Part(root, "World2Lock", Vector3.new(1.2, 11, 1.2), CFrame.new(portalPos), Color3.fromRGB(36, 36, 44), Enum.Material.DiamondPlate, true)
-	PropKit.Billboard(lockBar, "World 2\nPortal inactive", "InfoSign", UDim2.fromOffset(180, 64), Vector3.new(0, 4, 0), Color3.fromRGB(200, 200, 210))
+	TribalKit.BoneArch(root, "World2Arch", Vector3.new(portalPos.X, 1, portalPos.Z), math.rad(180))
+	local lockBar = PropKit.Part(root, "World2Lock", Vector3.new(1.1, 6, 1.1), CFrame.new(portalPos.X, 4, portalPos.Z), Color3.fromRGB(48, 36, 28), Enum.Material.Wood, true)
+	PropKit.Billboard(lockBar, "World 2\nPortal inactive", "InfoSign", UDim2.fromOffset(180, 64), Vector3.new(0, 4, 0), Color3.fromRGB(220, 210, 196))
 	PropKit.Prompt(lockBar, "Info", "World 2", "Portal", nil, WorldTextConfig.Prompt("Portal"))
 end
 
 local function buildLobby(paths, world)
 	local lobby = PropKit.Folder(world, "Lobby")
-	PropKit.Part(lobby, "Floor", Vector3.new(WorldLayout.LobbySize, 2, WorldLayout.LobbySize), CFrame.new(0, 0, 0), Color3.fromRGB(62, 60, 74), Enum.Material.Slate, true, nil, true)
-	PropKit.Part(lobby, "PlazaRing", Vector3.new(54, 0.15, 54), CFrame.new(0, 1.08, 0), Color3.fromRGB(186, 164, 112), Enum.Material.Marble, false)
-	PropKit.Fountain(lobby, "Fountain", Vector3.new(0, 1, 0))
-	local monument = PropKit.Part(lobby, "Obelisk", Vector3.new(3.2, 16, 3.2), CFrame.new(0, 10, -16), Color3.fromRGB(226, 210, 160), Enum.Material.Marble, true, nil, true)
-	PropKit.Part(lobby, "ObeliskCap", Vector3.new(1.2, 2.4, 1.2), monument.CFrame * CFrame.new(0, 9, 0), Color3.fromRGB(255, 214, 120), Enum.Material.Neon, false, 0.1)
-	PropKit.Billboard(monument, "KURKITO\nBattle Survival\nWorld 1", "LobbyTitle", UDim2.fromOffset(240, 88), Vector3.new(0, 10, 0), Color3.fromRGB(255, 236, 190))
-	PropKit.Light(monument, Color3.fromRGB(255, 220, 170), 16, 0.55)
+	local center = WorldLayout.Lobby.center
+	local size = WorldLayout.Lobby.size
+	PropKit.Part(lobby, "Floor", Vector3.new(size.X, 2, size.Z), CFrame.new(center), GRASS, Enum.Material.Grass, true, nil, true)
+	local halfX = size.X * 0.5
+	local halfZ = size.Z * 0.5
+	local north = center.Z + halfZ
+	local south = center.Z - halfZ
+	local west = center.X - halfX
+	local east = center.X + halfX
+	PropKit.Part(lobby, "CurbSouth", Vector3.new(size.X, 5, 3), CFrame.new(center.X, 3.2, south), Color3.fromRGB(84, 72, 60), Enum.Material.Slate, true, nil, true)
+	PropKit.Part(lobby, "CurbWest", Vector3.new(3, 6, size.Z), CFrame.new(west, 3.6, center.Z), Color3.fromRGB(78, 68, 58), Enum.Material.Slate, true, nil, true)
+	PropKit.Part(lobby, "CurbEast", Vector3.new(3, 6, size.Z), CFrame.new(east, 3.6, center.Z), Color3.fromRGB(78, 68, 58), Enum.Material.Slate, true, nil, true)
+	local northSpan = (size.X - 28) / 2
+	PropKit.Part(lobby, "CurbNorthL", Vector3.new(northSpan, 5, 3), CFrame.new(center.X - (14 + northSpan / 2), 3.2, north), Color3.fromRGB(84, 72, 60), Enum.Material.Slate, true, nil, true)
+	PropKit.Part(lobby, "CurbNorthR", Vector3.new(northSpan, 5, 3), CFrame.new(center.X + (14 + northSpan / 2), 3.2, north), Color3.fromRGB(84, 72, 60), Enum.Material.Slate, true, nil, true)
+
+	for index = 1, 5 do
+		local height = 18 + index * 4
+		PropKit.Part(lobby, "Ridge" .. index, Vector3.new(16, height, 22), CFrame.new(west - 8, height * 0.35, south + 40 + index * 55) * CFrame.Angles(0, 0.2, 0), Color3.fromRGB(92, 86, 78), Enum.Material.Rock, false, nil, true)
+	end
+
+	PropKit.Part(lobby, "PathVillage", Vector3.new(70, 0.08, 14), CFrame.new(-70, 1.08, 10) * CFrame.Angles(0, math.rad(18), 0), EARTH, Enum.Material.Ground, false)
+	PropKit.Part(lobby, "PathEggs", Vector3.new(14, 0.08, 80), CFrame.new(0, 1.08, -70), EARTH, Enum.Material.Ground, false)
+	PropKit.Part(lobby, "PathBoards", Vector3.new(80, 0.08, 16), CFrame.new(90, 1.08, 8), EARTH, Enum.Material.Ground, false)
 
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "LobbySpawn"
 	spawn.Anchored = true
 	spawn.Size = Vector3.new(12, 1, 12)
-	spawn.CFrame = CFrame.new(0, 1.6, 36)
+	spawn.CFrame = CFrame.new(0, 2, 46)
 	spawn.Neutral = true
 	spawn.Duration = 0
-	spawn.Transparency = 0.35
-	spawn.Material = Enum.Material.Neon
-	spawn.Color = Color3.fromRGB(240, 214, 150)
+	spawn.Transparency = 1
+	spawn.CanCollide = false
 	spawn.Parent = lobby
 
-	PropKit.Tree(lobby, "TreeNW", Vector3.new(-78, 1, -70), "oak")
-	PropKit.Tree(lobby, "TreeNE", Vector3.new(78, 1, -70), "pine")
-	PropKit.Tree(lobby, "TreeSW", Vector3.new(-78, 1, 70), "oak")
-	PropKit.Tree(lobby, "TreeSE", Vector3.new(78, 1, 70), "pine")
-	PropKit.Rock(lobby, "RockW", Vector3.new(-60, 1, 20), 1.1, Color3.fromRGB(120, 116, 110))
-	PropKit.Rock(lobby, "RockE", Vector3.new(60, 1, -24), 0.9, Color3.fromRGB(110, 108, 102))
-	PropKit.Bench(lobby, "BenchW", CFrame.new(-28, 1.7, 18))
-	PropKit.Bench(lobby, "BenchE", CFrame.new(28, 1.7, 18) * CFrame.Angles(0, math.rad(180), 0))
-	PropKit.Lantern(lobby, "LampNW", Vector3.new(-36, 1, -36), Color3.fromRGB(255, 196, 130), true)
-	PropKit.Lantern(lobby, "LampNE", Vector3.new(36, 1, -36), Color3.fromRGB(255, 196, 130), true)
-	PropKit.Lantern(lobby, "LampSW", Vector3.new(-36, 1, 48), Color3.fromRGB(255, 196, 130), false)
-	PropKit.Lantern(lobby, "LampSE", Vector3.new(36, 1, 48), Color3.fromRGB(255, 196, 130), false)
-	PropKit.Torch(lobby, "TorchN", Vector3.new(-12, 1, 78), Color3.fromRGB(255, 150, 70), false)
-	PropKit.Torch(lobby, "TorchS", Vector3.new(12, 1, -78), Color3.fromRGB(255, 150, 70), false)
-	PropKit.Banner(lobby, "FlagW", Vector3.new(-48, 1, 0), Color3.fromRGB(150, 42, 48), 1.57)
-	PropKit.Banner(lobby, "FlagE", Vector3.new(48, 1, 0), Color3.fromRGB(48, 72, 140), -1.57)
-	PropKit.Statue(lobby, "HeroStatue", Vector3.new(0, 1, 62), Color3.fromRGB(214, 206, 188))
+	local titlePost = PropKit.Part(lobby, "TitlePost", Vector3.new(0.5, 8, 0.5), CFrame.new(0, 5, 78), WOOD, Enum.Material.Wood, true, nil, true)
+	PropKit.Billboard(titlePost, "KURKITO\nWorld 0\nBattle Survival", "LobbyTitle", UDim2.fromOffset(220, 78), Vector3.new(0, 3.2, 0), Color3.fromRGB(255, 228, 190))
+	TribalKit.BoneArch(lobby, "NorthGate", Vector3.new(0, 1, 188), 0)
+	local arenaSign = PropKit.Part(lobby, "ArenaPointer", Vector3.new(0.4, 3.2, 4), CFrame.new(-8, 3, 176), WOOD, Enum.Material.Wood, true)
+	PropKit.Billboard(arenaSign, "Grave Wilds\nArena 1", "ArenaName", UDim2.fromOffset(180, 52), Vector3.new(0, 2.4, 0), Color3.fromRGB(255, 220, 180))
 
-	local function pointer(name, position, text)
-		local post = PropKit.Part(lobby, name, Vector3.new(1.1, 5.5, 1.1), CFrame.new(position), Color3.fromRGB(64, 56, 48), Enum.Material.Wood, true)
-		PropKit.Billboard(post, text, "InfoSign", UDim2.fromOffset(200, 56), Vector3.new(0, 3.6, 0), Color3.fromRGB(240, 230, 210))
-	end
-	pointer("SignArenas", Vector3.new(0, 3.5, 90), "Arenas → north")
-	pointer("SignEggs", Vector3.new(0, 3.5, -90), "Eggs → south")
-	pointer("SignBoards", Vector3.new(-90, 3.5, 0), "Leaderboards → west")
-	pointer("SignHeroes", Vector3.new(90, 3.5, 0), "Heroes and Rebirth → east")
+	buildVillage(lobby)
+	buildMerchant(lobby)
+	buildFeaturedEggs(lobby)
+	buildBoards(lobby)
+	buildServices(lobby)
 
 	local first = WorldLayout.ArenaCenter(1)
-	local pathLength = (first.Z - WorldLayout.ArenaHalf()) - 110
-	local pathCenter = 110 + pathLength / 2
-	PropKit.Part(paths, "PathArenas", Vector3.new(28, 2, pathLength), CFrame.new(0, 0, pathCenter), Color3.fromRGB(118, 112, 100), Enum.Material.Cobblestone, true, nil, true)
+	local fromZ = north - 4
+	local toZ = first.Z - WorldLayout.ArenaHalf()
+	local length = math.abs(toZ - fromZ)
+	local mid = (fromZ + toZ) / 2
+	PropKit.Part(paths, "PathArenas", Vector3.new(26, 2, length), CFrame.new(0, 0, mid), EARTH, Enum.Material.Ground, true, nil, true)
+	PropKit.FenceRun(paths, "HuntRailL", Vector3.new(-13, 1, fromZ), Vector3.new(-13, 1, toZ), WOOD)
+	PropKit.FenceRun(paths, "HuntRailR", Vector3.new(13, 1, fromZ), Vector3.new(13, 1, toZ), WOOD)
+	TribalKit.Banner(paths, "HuntFlagL", Vector3.new(-13, 1, fromZ + 18), 0, RED)
+	TribalKit.Banner(paths, "HuntFlagR", Vector3.new(13, 1, fromZ + 18), math.pi, RED)
 end
 
 function WorldBuilder.Build()
@@ -444,12 +572,11 @@ function WorldBuilder.Build()
 	PropKit.Folder(world, "Effects")
 	buildLobby(paths, world)
 	for _, arena in ipairs(ArenaConfig) do
-		buildArena(arenas, paths, arena)
+		if arena.index == 1 then
+			buildArena(arenas, paths, arena)
+		end
 	end
-	buildEggs(paths, world)
-	buildBoards(paths, world)
-	buildServices(paths, world)
-	print("[Kurkito] World 1 built (" .. GameConfig.WorldBuildId .. ").")
+	print("[Kurkito] World 0 built (" .. GameConfig.WorldBuildId .. ").")
 	return world
 end
 

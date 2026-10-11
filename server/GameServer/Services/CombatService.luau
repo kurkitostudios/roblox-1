@@ -50,8 +50,8 @@ local function arenaAllowed(player, enemy)
 	if not data or data.selectedHero == "" then
 		return false
 	end
-	local hero = data.heroes[data.selectedHero]
-	return hero.unlockedArenas[tostring(enemy.arenaIndex)] == true
+	local hero = data.heroes.Warrior
+	return hero ~= nil and hero.unlockedArenas[tostring(enemy.arenaIndex)] == true
 end
 
 function CombatService.DamagePlayer(player, rawAmount)
@@ -76,6 +76,10 @@ function CombatService.DamagePlayer(player, rawAmount)
 	end
 	if amount > 0 then
 		humanoid:TakeDamage(amount)
+		local character = player.Character
+		if character then
+			character:SetAttribute("KurkitoHitAt", workspace:GetServerTimeNow())
+		end
 	end
 end
 
@@ -101,6 +105,17 @@ local function pickCredit(enemy)
 	return nil
 end
 
+function CombatService.ApplySlow(player, seconds, scale)
+	local runtime = RuntimeState.Get(player)
+	local now = os.clock()
+	runtime.slowUntil = now + (seconds or 1)
+	runtime.slowScale = scale or 0.65
+	local character = player.Character
+	if character then
+		character:SetAttribute("KurkitoStunnedUntil", workspace:GetServerTimeNow() + (seconds or 1))
+	end
+end
+
 function CombatService.GrantRewards(enemy)
 	local player = pickCredit(enemy)
 	if not player then
@@ -116,6 +131,10 @@ function CombatService.GrantRewards(enemy)
 	QuestService.OnKill(player)
 	LootService.GrantEnemyDrops(player, enemy.def)
 	Notifier.Send(player, "reward", sharedStrings.XpCoins(xp.applied, coins))
+	local character = player.Character
+	if character then
+		character:SetAttribute("KurkitoVictory", workspace:GetServerTimeNow())
+	end
 end
 
 local function threatList(player, runtime, maxDistance)
@@ -214,8 +233,9 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 			runtime.mana += ability.mana or 0
 			return false
 		end
-		CombatFx.MarkSwing(player, "Special")
-		CombatFx.Ring(root.Position, Color3.fromRGB(255, 170, 80), (ability.radius or 12) * 2, 0.3)
+		CombatFx.MarkSwing(player, ability.id)
+		local ringColor = ability.id == "spinning_slash" and Color3.fromRGB(214, 170, 110) or Color3.fromRGB(255, 170, 80)
+		CombatFx.Ring(root.Position, ringColor, (ability.radius or 12) * 2, ability.id == "spinning_slash" and 0.42 or 0.3)
 	elseif kind == "projectile" then
 		local target = threats[1].enemy
 		if threats[1].distance > (ability.radius or stats.attackRange) then
@@ -264,7 +284,9 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 		end
 		runtime.buffs.defenseUntil = now + ability.duration
 		runtime.buffs.defenseReduction = math.clamp((ability.baseReduction or 0.2) + rank * (ability.perRank or 0), 0, 0.75)
-		CombatFx.NamedAura(player.Character, "DefenseAura", Color3.fromRGB(160, 190, 220), Vector3.new(5.5, 6.5, 5.5))
+		local guardColor = ability.id == "steel_skin" and Color3.fromRGB(176, 140, 96) or Color3.fromRGB(160, 190, 220)
+		CombatFx.NamedAura(player.Character, "DefenseAura", guardColor, Vector3.new(5.5, 6.5, 5.5))
+		CombatFx.MarkSwing(player, ability.id)
 	elseif kind == "buff_damage" then
 		local remain = runtime.buffs.furyUntil - now
 		if remain > ability.duration * 0.3 then
@@ -273,8 +295,9 @@ local function castAbility(player, runtime, stats, ability, rank, root)
 		end
 		runtime.buffs.furyUntil = now + ability.duration
 		runtime.buffs.furyBonus = (ability.baseBonus or 0.3) + rank * (ability.perRank or 0)
-		CombatFx.NamedAura(player.Character, "FuryAura", Color3.fromRGB(220, 70, 48), Vector3.new(4.2, 5.2, 4.2))
-		CombatFx.MarkSwing(player, "Special")
+		local furyColor = ability.id == "fury" and Color3.fromRGB(196, 84, 36) or Color3.fromRGB(220, 70, 48)
+		CombatFx.NamedAura(player.Character, "FuryAura", furyColor, Vector3.new(4.2, 5.2, 4.2))
+		CombatFx.MarkSwing(player, ability.id)
 	elseif kind == "buff_shield" then
 		if runtime.shield > 15 then
 			runtime.mana += ability.mana or 0
@@ -392,18 +415,39 @@ function CombatService.Tick(dt)
 					runtime.mana = math.min(stats.maxMana, runtime.mana + stats.manaRegen * dt)
 				end
 				refreshEngagement(player, runtime, root)
+				local _, humanoid = characterParts(player)
+				if humanoid then
+					if runtime.slowUntil and now < runtime.slowUntil then
+						humanoid.WalkSpeed = stats.walkSpeed * (runtime.slowScale or 0.65)
+					else
+						humanoid.WalkSpeed = stats.walkSpeed
+					end
+				end
 				local threats = threatList(player, runtime, stats.attackRange)
+				local character = player.Character
+				if character then
+					character:SetAttribute("KurkitoCombat", #threats > 0)
+				end
 				if #threats > 0 and now - runtime.lastAttack >= stats.attackInterval then
 					runtime.lastAttack = now
+					runtime.combo = (runtime.combo or 0) + 1
+					local swingKind = "attack1"
+					if runtime.combo % 3 == 0 then
+						swingKind = "smash"
+					elseif runtime.combo % 3 == 2 then
+						swingKind = "attack2"
+					end
 					EnemyService.Damage(threats[1].enemy, player, stats.damage)
-					CombatFx.BasicHit(player, data.selectedHero, root.Position, threats[1].enemy.root.Position, HeroConfig.Classes[data.selectedHero].color)
+					CombatFx.BasicHit(player, "Warrior", root.Position, threats[1].enemy.root.Position, HeroConfig.Classes.Warrior.color, swingKind)
 				end
-				local hero = data.heroes[data.selectedHero]
-				for _, ability in ipairs(AbilityConfig[data.selectedHero]) do
+				local hero = data.heroes.Warrior
+				if hero then
+				for _, ability in ipairs(AbilityConfig.Warrior) do
 					if Rules.AbilityUnlocked(hero.mastery, ability) then
 						-- Il rango 0 è il valore base. I punti aumentano il rango.
 						castAbility(player, runtime, stats, ability, hero.skillRanks[ability.id] or 0, root)
 					end
+				end
 				end
 			end
 		end
@@ -430,7 +474,7 @@ function CombatService.PushVitals(player)
 	local runtime = RuntimeState.Get(player)
 	local now = os.clock()
 	local cooldowns = {}
-	for _, ability in ipairs(AbilityConfig[data.selectedHero]) do
+	for _, ability in ipairs(AbilityConfig.Warrior) do
 		local untilTime = runtime.cooldowns[ability.id] or 0
 		cooldowns[ability.id] = math.max(0, untilTime - now)
 	end

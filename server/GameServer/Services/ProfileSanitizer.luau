@@ -11,6 +11,7 @@ local QuestConfig = shared("QuestConfig")
 local PetConfig = shared("PetConfig")
 local LootConfig = shared("LootConfig")
 local ProfileTemplate = shared("ProfileTemplate")
+local Rules = shared("Rules")
 
 local ProfileSanitizer = {}
 
@@ -212,6 +213,12 @@ function ProfileSanitizer.Sanitize(raw)
 	if not isInteger(raw.totalKills, 0, 2000000000) then
 		return fail("Invalid kills.")
 	end
+	local lifetimeCoinsEarned = raw.lifetimeCoinsEarned
+	if lifetimeCoinsEarned == nil then
+		lifetimeCoinsEarned = 0
+	elseif not isInteger(lifetimeCoinsEarned, 0, GameConfig.MaxCoins) then
+		return fail("Invalid lifetime coins.")
+	end
 
 	local heroes = {}
 	if type(raw.heroes) ~= "table" then
@@ -227,7 +234,7 @@ function ProfileSanitizer.Sanitize(raw)
 
 	local quests = {}
 	if type(raw.quests) ~= "table" then
-		return fail("Missioni mancanti.")
+		return fail("Quests are missing.")
 	end
 	for _, quest in ipairs(QuestConfig) do
 		local state = raw.quests[quest.id]
@@ -395,9 +402,10 @@ function ProfileSanitizer.Sanitize(raw)
 		end
 	end
 
-	return {
+	local profile = {
 		schemaVersion = ProfileTemplate.SchemaVersion,
 		coins = raw.coins,
+		lifetimeCoinsEarned = lifetimeCoinsEarned,
 		selectedHero = selected,
 		firstHeroChosen = raw.firstHeroChosen,
 		unlockedHeroes = unlocked,
@@ -409,6 +417,8 @@ function ProfileSanitizer.Sanitize(raw)
 		inventory = inventory,
 		heroes = heroes,
 	}
+	Rules.ReconcileWorld0(profile)
+	return profile
 end
 
 return ProfileSanitizer

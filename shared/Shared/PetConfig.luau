@@ -144,7 +144,7 @@ local specials = {
 	{
 		id = "egg_robux_1",
 		kind = "robux",
-		name = "Royal Egg I",
+		name = "Premium Egg",
 		terrace = 1,
 		arenas = "1–5",
 		cost = nil,
@@ -179,11 +179,78 @@ local specials = {
 	},
 }
 
+local function explicitPool(entries)
+	local total = 0
+	for _, entry in ipairs(entries) do
+		total += entry.weight
+	end
+	local pool = {}
+	for _, entry in ipairs(entries) do
+		table.insert(pool, {
+			petId = entry.petId,
+			weight = entry.weight,
+			chance = entry.weight / total,
+		})
+	end
+	return pool
+end
+
+-- Uova fisse del Mondo 0. I prezzi sono PROVVISORI.
+-- Non seguono l'arena sbloccata. Le uova delle arene restano in PetConfig.Eggs per il futuro.
+local worldEggs = {
+	coin = {
+		id = "world0_coin",
+		kind = "coins",
+		name = "Coin Egg",
+		cost = 250,
+		provisional = true,
+		productId = nil,
+		enabled = true,
+		pool = explicitPool({
+			{ petId = "zombie", weight = 70 },
+			{ petId = "zombie_corrotto", weight = 22 },
+			{ petId = "rotfang", weight = 8 },
+		}),
+	},
+	advanced = {
+		id = "world0_advanced",
+		kind = "coins",
+		name = "Advanced Coin Egg",
+		cost = 900,
+		provisional = true,
+		productId = nil,
+		enabled = true,
+		pool = explicitPool({
+			{ petId = "zombie_corrotto", weight = 45 },
+			{ petId = "rotfang", weight = 40 },
+			{ petId = "grave_chieftain", weight = 15 },
+		}),
+	},
+	premium = {
+		id = "egg_robux_1",
+		kind = "robux",
+		name = "Premium Egg",
+		cost = nil,
+		provisional = true,
+		productId = nil,
+		enabled = false,
+		pool = explicitPool({
+			{ petId = "rotfang", weight = 55 },
+			{ petId = "grave_chieftain", weight = 45 },
+		}),
+	},
+}
+
 PetConfig.Eggs = eggs
 PetConfig.SpecialEggs = specials
+PetConfig.WorldEggs = worldEggs
 
 function PetConfig.GetEgg(arenaIndex)
 	return eggs[arenaIndex]
+end
+
+function PetConfig.GetWorldEgg(key)
+	return worldEggs[key]
 end
 
 function PetConfig.BonusFor(petId, evolution)

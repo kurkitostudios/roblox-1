@@ -5,15 +5,15 @@
 local ArenaConfig = {
 	{
 		index = 1,
-		name = "Crypt",
+		name = "Grave Wilds",
 		mastery = 0,
 		cost = 0,
-		color = Color3.fromRGB(78, 118, 86),
-		decor = "crypt",
-		floor = Color3.fromRGB(62, 68, 64),
-		floorMaterial = Enum.Material.Cobblestone,
-		wall = Color3.fromRGB(48, 52, 56),
-		accent = Color3.fromRGB(120, 190, 130),
+		color = Color3.fromRGB(122, 86, 52),
+		decor = "gravewilds",
+		floor = Color3.fromRGB(108, 82, 52),
+		floorMaterial = Enum.Material.Ground,
+		wall = Color3.fromRGB(86, 72, 58),
+		accent = Color3.fromRGB(196, 92, 42),
 	},
 	{
 		index = 2,

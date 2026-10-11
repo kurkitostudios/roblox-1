@@ -25,7 +25,7 @@ for arena = 1, 15 do
 		name = "Arena " .. arena .. " Relic",
 		category = "collectibles",
 		rarity = "Rare",
-		description = "A World 1 collectible.",
+		description = "A World 0 collectible.",
 	})
 end
 
@@ -42,12 +42,12 @@ local function gear(id, name, slot, classId, rarity, bonuses)
 	})
 end
 
-gear("warrior_blade_1", "Recruit Blade", "weapon", "Warrior", "Common", { dmg = 3 })
-gear("warrior_blade_2", "Veteran Sword", "weapon", "Warrior", "Rare", { dmg = 8 })
-gear("warrior_blade_3", "Champion Greatsword", "weapon", "Warrior", "Epic", { dmg = 16 })
-gear("warrior_armor_1", "Simple Hauberk", "armor", "Warrior", "Common", { hp = 12 })
-gear("warrior_armor_2", "Iron Armor", "armor", "Warrior", "Rare", { hp = 30 })
-gear("warrior_armor_3", "Champion Plate", "armor", "Warrior", "Epic", { hp = 60 })
+gear("warrior_blade_1", "Bone Club", "weapon", "Warrior", "Common", { dmg = 3 })
+gear("warrior_blade_2", "Heavy Tribal Club", "weapon", "Warrior", "Rare", { dmg = 8 })
+gear("warrior_blade_3", "Chieftain Staff", "weapon", "Warrior", "Epic", { dmg = 16 })
+gear("warrior_armor_1", "Hide Wrap", "armor", "Warrior", "Common", { hp = 12 })
+gear("warrior_armor_2", "Bone Harness", "armor", "Warrior", "Rare", { hp = 30 })
+gear("warrior_armor_3", "Chief Hide", "armor", "Warrior", "Epic", { hp = 60 })
 
 gear("mage_staff_1", "Arcane Branch", "weapon", "Mage", "Common", { dmg = 3 })
 gear("mage_staff_2", "Ember Staff", "weapon", "Mage", "Rare", { dmg = 9 })

@@ -188,6 +188,10 @@ function HeroAppearance.Apply(character, heroId, heroState, profile)
 	if not character or not heroState or not heroState.stats then
 		return
 	end
+	-- Il Mondo 0 disegna solo il Warrior. Mage e Archer restano dati archiviati.
+	if heroId ~= "Warrior" then
+		heroId = "Warrior"
+	end
 	local classDef = HeroConfig.Classes[heroId]
 	if not classDef then
 		return
@@ -218,60 +222,88 @@ function HeroAppearance.Apply(character, heroId, heroState, profile)
 		return
 	end
 
-	local metal = Color3.fromRGB(168, 176, 188):Lerp(Color3.fromRGB(230, 196, 110), math.clamp(hpTier / 7, 0, 0.65))
-	local cloth = classDef.color:Lerp(Color3.fromRGB(240, 230, 210), 0.18)
+	local hide = Color3.fromRGB(112, 72, 44)
+	local fur = Color3.fromRGB(62, 42, 30)
+	local bone = Color3.fromRGB(214, 198, 168)
+	local wood = Color3.fromRGB(86, 56, 34)
+	local cloth = classDef.color:Lerp(Color3.fromRGB(240, 220, 190), 0.12)
+
+	local bodyColors = character:FindFirstChildOfClass("BodyColors")
+	if heroId == "Warrior" and bodyColors then
+		local skin = Color3.fromRGB(198, 146, 108)
+		bodyColors.HeadColor3 = skin
+		bodyColors.LeftArmColor3 = skin
+		bodyColors.RightArmColor3 = skin
+		bodyColors.LeftLegColor3 = Color3.fromRGB(120, 78, 52)
+		bodyColors.RightLegColor3 = Color3.fromRGB(120, 78, 52)
+		bodyColors.TorsoColor3 = Color3.fromRGB(92, 58, 38)
+	end
 
 	if heroId == "Warrior" then
 		local speedTier = Rules.VisualTier(heroState.stats.Speed or 1)
-		adorn(folder, "Cuirass", Vector3.new(2.05, 1.35, 0.55), metal, Enum.Material.Metal, torso.CFrame * CFrame.new(0, 0.05, -0.55), torso)
-		adorn(folder, "Backplate", Vector3.new(1.7, 1.2, 0.28), metal:Lerp(Color3.new(0, 0, 0), 0.25), Enum.Material.Metal, torso.CFrame * CFrame.new(0, 0.05, 0.55), torso)
+		adorn(folder, "HideTunic", Vector3.new(2.05, 1.55, 1.05), hide, Enum.Material.Fabric, torso.CFrame * CFrame.new(0, 0.05, -0.15), torso)
+		adorn(folder, "FurMantle", Vector3.new(2.2, 0.55, 1.15), fur, Enum.Material.Fabric, torso.CFrame * CFrame.new(0, 0.55, -0.2), torso)
+		adorn(folder, "BoneShoulderL", Vector3.new(0.7, 0.38, 0.7), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(-1.05, 0.65, 0), torso, Enum.PartType.Ball)
+		adorn(folder, "BoneShoulderR", Vector3.new(0.75, 0.4, 0.75), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(1.05, 0.62, 0), torso, Enum.PartType.Ball)
 		if hpTier >= 1 then
-			adorn(folder, "PauldronL", Vector3.new(0.85, 0.42, 0.85), metal, Enum.Material.Metal, torso.CFrame * CFrame.new(-1.05, 0.7, 0), torso, Enum.PartType.Ball)
-			adorn(folder, "PauldronR", Vector3.new(0.85, 0.42, 0.85), metal, Enum.Material.Metal, torso.CFrame * CFrame.new(1.05, 0.7, 0), torso, Enum.PartType.Ball)
+			adorn(folder, "ChestBone", Vector3.new(1.15, 0.7, 0.22), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(0, 0.15, -0.62), torso)
 		end
 		if hpTier >= 2 then
-			adorn(folder, "Fauld", Vector3.new(1.7, 0.45, 0.9), metal:Lerp(cloth, 0.25), Enum.Material.Metal, torso.CFrame * CFrame.new(0, -0.95, -0.15), torso)
+			adorn(folder, "ExtraBoneL", Vector3.new(0.28, 0.95, 0.28), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(-1.15, 1.15, 0) * CFrame.Angles(0, 0, math.rad(20)), torso)
+			adorn(folder, "ExtraBoneR", Vector3.new(0.28, 0.95, 0.28), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(1.15, 1.15, 0) * CFrame.Angles(0, 0, math.rad(-20)), torso)
 		end
+		adorn(folder, "Belt", Vector3.new(2.05, 0.22, 1.12), Color3.fromRGB(72, 44, 28), Enum.Material.Fabric, torso.CFrame * CFrame.new(0, -0.55, -0.08), torso)
+		adorn(folder, "BeltBone", Vector3.new(0.28, 0.28, 0.16), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(0, -0.55, -0.62), torso)
+		adorn(folder, "HideSkirt", Vector3.new(1.7, 0.9, 1), hide:Lerp(fur, 0.35), Enum.Material.Fabric, torso.CFrame * CFrame.new(0, -1.05, -0.05), torso)
 		if hpTier >= 3 then
-			local cape = adorn(folder, "Cape", Vector3.new(1.6, 2.1, 0.12), classDef.color:Lerp(Color3.new(0, 0, 0), 0.35), Enum.Material.Fabric, torso.CFrame * CFrame.new(0, -0.4, 0.7), torso)
-			cape.Transparency = 0.05
+			local backFur = adorn(folder, "BackFur", Vector3.new(1.5, 1.8, 0.16), fur, Enum.Material.Fabric, torso.CFrame * CFrame.new(0, -0.35, 0.65), torso)
+			backFur.Transparency = 0.05
 		end
-		local helmColor = metal
-		adorn(folder, "Helm", Vector3.new(1.25, 0.7, 1.3), helmColor, Enum.Material.Metal, head.CFrame * CFrame.new(0, 0.35, 0), head)
-		if hpTier >= 2 then
-			adorn(folder, "Visor", Vector3.new(1.05, 0.22, 0.2), Color3.fromRGB(40, 42, 48), Enum.Material.Metal, head.CFrame * CFrame.new(0, 0.05, -0.55), head)
+		for index = 1, 4 do
+			adorn(folder, "Tooth" .. index, Vector3.new(0.12, 0.2, 0.1), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(-0.45 + index * 0.18, 0.85, -0.6), torso)
 		end
+		for index = 1, 4 do
+			adorn(folder, "Hair" .. index, Vector3.new(0.28, 0.55 + (index % 2) * 0.2, 0.32), Color3.fromRGB(28, 18, 14), Enum.Material.Fabric, head.CFrame * CFrame.new(-0.35 + index * 0.18, 0.45, 0.05) * CFrame.Angles(0, 0, math.rad((index - 2.5) * 8)), head)
+		end
+		adorn(folder, "FacePaint", Vector3.new(0.16, 0.55, 0.08), Color3.fromRGB(120, 42, 32), Enum.Material.SmoothPlastic, head.CFrame * CFrame.new(0, 0.02, -0.58), head)
 		if hpTier >= 4 then
-			adorn(folder, "Plume", Vector3.new(0.2, 0.9, 0.35), classDef.color, Enum.Material.Fabric, head.CFrame * CFrame.new(0, 0.95, 0.1), head)
+			adorn(folder, "BoneCirclet", Vector3.new(1.15, 0.16, 1.15), bone, Enum.Material.SmoothPlastic, head.CFrame * CFrame.new(0, 0.35, 0), head)
 		end
-		adorn(folder, "Gauntlet", Vector3.new(0.55, 0.4, 0.55), metal, Enum.Material.Metal, hand.CFrame * CFrame.new(0, 0, 0), hand, Enum.PartType.Ball)
+		adorn(folder, "WrapR", Vector3.new(0.48, 0.4, 0.48), hide, Enum.Material.Fabric, hand.CFrame, hand, Enum.PartType.Ball)
 		if offHand then
-			adorn(folder, "GauntletL", Vector3.new(0.5, 0.38, 0.5), metal, Enum.Material.Metal, offHand.CFrame, offHand, Enum.PartType.Ball)
+			adorn(folder, "WrapL", Vector3.new(0.46, 0.38, 0.46), hide, Enum.Material.Fabric, offHand.CFrame, offHand, Enum.PartType.Ball)
 		end
 		if footL then
-			adorn(folder, "BootL", Vector3.new(0.7, 0.4, 1.05), metal:Lerp(Color3.new(0, 0, 0), 0.2), Enum.Material.Metal, footL.CFrame * CFrame.new(0, -0.15, -0.1), footL)
+			adorn(folder, "FootWrapL", Vector3.new(0.7, 0.32, 1), hide, Enum.Material.Fabric, footL.CFrame * CFrame.new(0, -0.12, -0.05), footL)
 		end
 		if footR then
-			adorn(folder, "BootR", Vector3.new(0.7, 0.4, 1.05), metal:Lerp(Color3.new(0, 0, 0), 0.2), Enum.Material.Metal, footR.CFrame * CFrame.new(0, -0.15, -0.1), footR)
+			adorn(folder, "FootWrapR", Vector3.new(0.7, 0.32, 1), hide, Enum.Material.Fabric, footR.CFrame * CFrame.new(0, -0.12, -0.05), footR)
 		end
-		local bladeLength = 2.3 + dmgTier * 0.42
-		local bladeColor = Color3.fromRGB(198, 206, 214):Lerp(Color3.fromRGB(255, 220, 140), math.clamp(dmgTier / 6, 0, 0.8))
-		local bladeMat = dmgTier >= 4 and Enum.Material.Neon or Enum.Material.Metal
-		local blade = weaponMotor(folder, "Blade", Vector3.new(0.18, bladeLength, 0.42), bladeColor, bladeMat, hand.CFrame * CFrame.new(0, -0.7 - bladeLength * 0.35, -0.35) * CFrame.Angles(math.rad(18), 0, 0), hand)
-		adorn(folder, "Guard", Vector3.new(1.15 + dmgTier * 0.06, 0.16, 0.28), Color3.fromRGB(212, 170, 70), Enum.Material.Metal, blade.CFrame * CFrame.new(0, bladeLength * 0.42, 0), blade)
-		adorn(folder, "Grip", Vector3.new(0.16, 0.55, 0.16), Color3.fromRGB(72, 48, 32), Enum.Material.Wood, blade.CFrame * CFrame.new(0, bladeLength * 0.5, 0), blade)
+		local clubLength = 3.6 + dmgTier * 0.62
+		local club = weaponMotor(folder, "Club", Vector3.new(0.46 + dmgTier * 0.04, clubLength, 0.46 + dmgTier * 0.04), wood, Enum.Material.Wood, hand.CFrame * CFrame.new(0, -0.55 - clubLength * 0.28, -0.25) * CFrame.Angles(math.rad(16), 0, math.rad(8)), hand)
+		local headSize = 1.15 + dmgTier * 0.22
+		local clubHead = adorn(folder, "ClubHead", Vector3.new(headSize, 0.85, headSize), Color3.fromRGB(96, 90, 82), Enum.Material.Slate, club.CFrame * CFrame.new(0, -clubLength * 0.46, 0), club, Enum.PartType.Ball)
+		adorn(folder, "BindingA", Vector3.new(0.5, 0.16, 0.5), hide, Enum.Material.Fabric, club.CFrame * CFrame.new(0, clubLength * 0.18, 0), club)
+		adorn(folder, "BindingB", Vector3.new(0.48, 0.14, 0.48), Color3.fromRGB(70, 42, 28), Enum.Material.Fabric, club.CFrame * CFrame.new(0, -clubLength * 0.22, 0), club)
 		if dmgTier >= 2 then
-			adorn(folder, "Pommel", Vector3.new(0.28, 0.28, 0.28), Color3.fromRGB(230, 190, 80), Enum.Material.Metal, blade.CFrame * CFrame.new(0, bladeLength * 0.58, 0), blade, Enum.PartType.Ball)
+			adorn(folder, "ClubSpike", Vector3.new(0.16, 0.45, 0.16), bone, Enum.Material.SmoothPlastic, clubHead.CFrame * CFrame.new(0.2, -0.2, -0.35), clubHead)
 		end
 		if dmgTier >= 3 then
-			local gem = adorn(folder, "BladeGem", Vector3.new(0.22, 0.22, 0.22), classDef.color, Enum.Material.Neon, blade.CFrame * CFrame.new(0, bladeLength * 0.2, 0), blade, Enum.PartType.Ball)
-			spark(gem, bladeColor, 2 + dmgTier)
+			adorn(folder, "ClubTooth", Vector3.new(0.14, 0.4, 0.14), bone, Enum.Material.SmoothPlastic, clubHead.CFrame * CFrame.new(-0.25, 0.1, -0.3), clubHead)
 		end
 		if speedTier >= 1 then
-			trail(folder, blade, classDef.color, 0.12 + speedTier * 0.04)
+			trail(folder, clubHead, Color3.fromRGB(210, 180, 130), 0.22 + speedTier * 0.08)
+			adorn(folder, "SpeedWrap", Vector3.new(0.2, 0.55 + speedTier * 0.12, 0.2), Color3.fromRGB(138, 42, 36), Enum.Material.Fabric, club.CFrame * CFrame.new(0, clubLength * 0.05, 0), club)
+			local band = 0.16 + speedTier * 0.07
+			if footL then
+				adorn(folder, "SpeedBandL", Vector3.new(0.9, band, 1.2), Color3.fromRGB(138, 42, 36), Enum.Material.Fabric, footL.CFrame * CFrame.new(0, 0.15, 0), footL)
+			end
+			if footR then
+				adorn(folder, "SpeedBandR", Vector3.new(0.9, band, 1.2), Color3.fromRGB(138, 42, 36), Enum.Material.Fabric, footR.CFrame * CFrame.new(0, 0.15, 0), footR)
+			end
 		end
 		if speedTier >= 3 then
-			spark(torso, classDef.color, 2)
+			spark(torso, Color3.fromRGB(255, 170, 90), 2)
 		end
 	elseif heroId == "Mage" then
 		local manaTier = Rules.VisualTier(heroState.stats.Mana or 1)

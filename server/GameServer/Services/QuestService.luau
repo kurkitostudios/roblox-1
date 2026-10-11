@@ -1,6 +1,5 @@
 local shared = require(script.Parent.SharedLoader)
 local QuestConfig = shared("QuestConfig")
-local HeroConfig = shared("HeroConfig")
 local Rules = shared("Rules")
 local PlayerData = require(script.Parent.PlayerDataService)
 local Notifier = require(script.Parent.Notifier)
@@ -18,16 +17,9 @@ function QuestService.OnKill(player)
 			if completedNow then
 				if quest.coins and quest.coins > 0 then
 					-- Ricompensa fissa di missione: non applica il bonus Rebirth.
-					data.coins = Rules.AddCoins(data.coins, quest.coins, shared("GameConfig").MaxCoins)
-				end
-				local unlocked = nil
-				if quest.unlockNextHero then
-					unlocked = Rules.UnlockNextHero(data, HeroConfig.Order)
+					Rules.GrantEarnedCoins(data, quest.coins, shared("GameConfig").MaxCoins)
 				end
 				local message = "Quest complete: " .. quest.name
-				if unlocked then
-					message ..= ". Hero unlocked: " .. HeroConfig.Classes[unlocked].displayName
-				end
 				if quest.coins and quest.coins > 0 then
 					message ..= ". +" .. tostring(quest.coins) .. " Coins"
 				end
