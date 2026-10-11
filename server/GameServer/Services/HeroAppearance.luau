@@ -188,6 +188,10 @@ function HeroAppearance.Apply(character, heroId, heroState, profile)
 	if not character or not heroState or not heroState.stats then
 		return
 	end
+	-- Il Mondo 0 disegna solo il Warrior. Mage e Archer restano dati archiviati.
+	if heroId ~= "Warrior" then
+		heroId = "Warrior"
+	end
 	local classDef = HeroConfig.Classes[heroId]
 	if not classDef then
 		return
@@ -241,10 +245,15 @@ function HeroAppearance.Apply(character, heroId, heroState, profile)
 		adorn(folder, "FurMantle", Vector3.new(2.2, 0.55, 1.15), fur, Enum.Material.Fabric, torso.CFrame * CFrame.new(0, 0.55, -0.2), torso)
 		adorn(folder, "BoneShoulderL", Vector3.new(0.7, 0.38, 0.7), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(-1.05, 0.65, 0), torso, Enum.PartType.Ball)
 		adorn(folder, "BoneShoulderR", Vector3.new(0.75, 0.4, 0.75), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(1.05, 0.62, 0), torso, Enum.PartType.Ball)
-		if hpTier >= 2 then
-			adorn(folder, "ExtraBoneL", Vector3.new(0.22, 0.7, 0.22), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(-1.15, 1.05, 0) * CFrame.Angles(0, 0, math.rad(20)), torso)
-			adorn(folder, "ExtraBoneR", Vector3.new(0.22, 0.7, 0.22), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(1.15, 1.05, 0) * CFrame.Angles(0, 0, math.rad(-20)), torso)
+		if hpTier >= 1 then
+			adorn(folder, "ChestBone", Vector3.new(1.15, 0.7, 0.22), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(0, 0.15, -0.62), torso)
 		end
+		if hpTier >= 2 then
+			adorn(folder, "ExtraBoneL", Vector3.new(0.28, 0.95, 0.28), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(-1.15, 1.15, 0) * CFrame.Angles(0, 0, math.rad(20)), torso)
+			adorn(folder, "ExtraBoneR", Vector3.new(0.28, 0.95, 0.28), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(1.15, 1.15, 0) * CFrame.Angles(0, 0, math.rad(-20)), torso)
+		end
+		adorn(folder, "Belt", Vector3.new(2.05, 0.22, 1.12), Color3.fromRGB(72, 44, 28), Enum.Material.Fabric, torso.CFrame * CFrame.new(0, -0.55, -0.08), torso)
+		adorn(folder, "BeltBone", Vector3.new(0.28, 0.28, 0.16), bone, Enum.Material.SmoothPlastic, torso.CFrame * CFrame.new(0, -0.55, -0.62), torso)
 		adorn(folder, "HideSkirt", Vector3.new(1.7, 0.9, 1), hide:Lerp(fur, 0.35), Enum.Material.Fabric, torso.CFrame * CFrame.new(0, -1.05, -0.05), torso)
 		if hpTier >= 3 then
 			local backFur = adorn(folder, "BackFur", Vector3.new(1.5, 1.8, 0.16), fur, Enum.Material.Fabric, torso.CFrame * CFrame.new(0, -0.35, 0.65), torso)
@@ -270,9 +279,9 @@ function HeroAppearance.Apply(character, heroId, heroState, profile)
 		if footR then
 			adorn(folder, "FootWrapR", Vector3.new(0.7, 0.32, 1), hide, Enum.Material.Fabric, footR.CFrame * CFrame.new(0, -0.12, -0.05), footR)
 		end
-		local clubLength = 3.3 + dmgTier * 0.28
-		local club = weaponMotor(folder, "Club", Vector3.new(0.42, clubLength, 0.42), wood, Enum.Material.Wood, hand.CFrame * CFrame.new(0, -0.55 - clubLength * 0.28, -0.25) * CFrame.Angles(math.rad(16), 0, math.rad(8)), hand)
-		local headSize = 1.05 + dmgTier * 0.08
+		local clubLength = 3.6 + dmgTier * 0.62
+		local club = weaponMotor(folder, "Club", Vector3.new(0.46 + dmgTier * 0.04, clubLength, 0.46 + dmgTier * 0.04), wood, Enum.Material.Wood, hand.CFrame * CFrame.new(0, -0.55 - clubLength * 0.28, -0.25) * CFrame.Angles(math.rad(16), 0, math.rad(8)), hand)
+		local headSize = 1.15 + dmgTier * 0.22
 		local clubHead = adorn(folder, "ClubHead", Vector3.new(headSize, 0.85, headSize), Color3.fromRGB(96, 90, 82), Enum.Material.Slate, club.CFrame * CFrame.new(0, -clubLength * 0.46, 0), club, Enum.PartType.Ball)
 		adorn(folder, "BindingA", Vector3.new(0.5, 0.16, 0.5), hide, Enum.Material.Fabric, club.CFrame * CFrame.new(0, clubLength * 0.18, 0), club)
 		adorn(folder, "BindingB", Vector3.new(0.48, 0.14, 0.48), Color3.fromRGB(70, 42, 28), Enum.Material.Fabric, club.CFrame * CFrame.new(0, -clubLength * 0.22, 0), club)
@@ -283,7 +292,15 @@ function HeroAppearance.Apply(character, heroId, heroState, profile)
 			adorn(folder, "ClubTooth", Vector3.new(0.14, 0.4, 0.14), bone, Enum.Material.SmoothPlastic, clubHead.CFrame * CFrame.new(-0.25, 0.1, -0.3), clubHead)
 		end
 		if speedTier >= 1 then
-			trail(folder, clubHead, Color3.fromRGB(210, 180, 130), 0.16 + speedTier * 0.03)
+			trail(folder, clubHead, Color3.fromRGB(210, 180, 130), 0.22 + speedTier * 0.08)
+			adorn(folder, "SpeedWrap", Vector3.new(0.2, 0.55 + speedTier * 0.12, 0.2), Color3.fromRGB(138, 42, 36), Enum.Material.Fabric, club.CFrame * CFrame.new(0, clubLength * 0.05, 0), club)
+			local band = 0.16 + speedTier * 0.07
+			if footL then
+				adorn(folder, "SpeedBandL", Vector3.new(0.9, band, 1.2), Color3.fromRGB(138, 42, 36), Enum.Material.Fabric, footL.CFrame * CFrame.new(0, 0.15, 0), footL)
+			end
+			if footR then
+				adorn(folder, "SpeedBandR", Vector3.new(0.9, band, 1.2), Color3.fromRGB(138, 42, 36), Enum.Material.Fabric, footR.CFrame * CFrame.new(0, 0.15, 0), footR)
+			end
 		end
 		if speedTier >= 3 then
 			spark(torso, Color3.fromRGB(255, 170, 90), 2)

@@ -112,6 +112,20 @@ function Rules.AddCoins(coins, amount, maxCoins)
 	return sum
 end
 
+-- Guadagno legittimo: portafoglio e totale vita. I rimborsi usano solo AddCoins.
+function Rules.GrantEarnedCoins(profile, amount, maxCoins)
+	if type(profile) ~= "table" then
+		return 0
+	end
+	local before = profile.coins or 0
+	profile.coins = Rules.AddCoins(before, amount, maxCoins)
+	local gained = profile.coins - before
+	if gained > 0 then
+		profile.lifetimeCoinsEarned = Rules.AddCoins(profile.lifetimeCoinsEarned or 0, gained, maxCoins)
+	end
+	return gained
+end
+
 function Rules.TrySpend(coins, amount)
 	if not Rules.IsFinite(amount) then
 		return false, coins, "Invalid amount."
@@ -282,30 +296,72 @@ function Rules.CanPurchaseArena(hero, arenaDef, coins)
 end
 
 function Rules.SelectFirstHero(profile, heroId, valid)
+	if heroId ~= "Warrior" or not valid[heroId] then
+		return false, "World 0 has one hero: the Warrior."
+	end
+	if profile.firstHeroChosen and profile.selectedHero == "Warrior" then
+		return true, nil
+	end
 	if profile.firstHeroChosen then
 		return false, "The first hero has already been chosen."
 	end
-	if not valid[heroId] then
-		return false, "Invalid hero."
-	end
 	profile.firstHeroChosen = true
-	profile.selectedHero = heroId
-	profile.unlockedHeroes[heroId] = true
+	profile.selectedHero = "Warrior"
+	profile.unlockedHeroes.Warrior = true
 	return true, nil
 end
 
-function Rules.SwitchHero(profile, heroId)
-	if profile.selectedHero == "" or profile.firstHeroChosen ~= true then
-		return false, "Choose your first hero first."
+function Rules.SwitchHero(_profile, _heroId)
+	return false, "World 0 has one hero: the Warrior."
+end
+
+-- Passa l'eroe attivo a Warrior. Non copia Maestria, Rebirth o upgrade dalle classi archiviate.
+function Rules.ReconcileWorld0(profile)
+	if type(profile) ~= "table" or type(profile.heroes) ~= "table" or type(profile.heroes.Warrior) ~= "table" then
+		return false
 	end
-	if not profile.unlockedHeroes[heroId] then
-		return false, "Hero is locked."
+	local changed = false
+	profile.unlockedHeroes = profile.unlockedHeroes or {}
+	if profile.selectedHero ~= "Warrior" then
+		profile.selectedHero = "Warrior"
+		changed = true
 	end
-	if profile.selectedHero == heroId then
-		return false, "That hero is already active."
+	if profile.firstHeroChosen ~= true then
+		profile.firstHeroChosen = true
+		changed = true
 	end
-	profile.selectedHero = heroId
-	return true, nil
+	if profile.unlockedHeroes.Warrior ~= true then
+		profile.unlockedHeroes.Warrior = true
+		changed = true
+	end
+	if type(profile.lifetimeCoinsEarned) ~= "number" then
+		profile.lifetimeCoinsEarned = 0
+		changed = true
+	end
+	return changed
+end
+
+function Rules.WarriorRebirths(profile)
+	local hero = profile and profile.heroes and profile.heroes.Warrior
+	if type(hero) ~= "table" then
+		return 0
+	end
+	return hero.rebirths or 0
+end
+
+function Rules.SummonRoom(active, maximum, requested)
+	local room = (maximum or 0) - (active or 0)
+	if room < 0 then
+		room = 0
+	end
+	local ask = requested or 0
+	if ask < 0 then
+		ask = 0
+	end
+	if ask < room then
+		return ask
+	end
+	return room
 end
 
 function Rules.AbilityUnlocked(mastery, ability)

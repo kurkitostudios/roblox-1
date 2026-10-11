@@ -64,28 +64,15 @@ local function render()
 	end
 	Widgets.Clear(body)
 	local ui = Strings.UI
+	Widgets.Label(body, ui.TradingSoon, UDim2.new(1, 0, 0, 36), true)
 	Widgets.Label(body, ui.MerchantHint, UDim2.new(1, 0, 0, 48), false)
 	Widgets.Label(body, ui.MerchantStay, UDim2.new(1, 0, 0, 22), false).TextColor3 = Theme.muted
-	local profile = getProfile and getProfile() or nil
-	if not profile then
-		Widgets.Label(body, ui.Loading, nil, false)
-		return
-	end
-	local rows = rowsFor(profile)
-	if #rows == 0 then
-		Widgets.Label(body, ui.MerchantEmpty, UDim2.new(1, 0, 0, 44), false)
-		return
-	end
-	for _, row in ipairs(rows) do
-		Widgets.Label(body, string.format("%s  x%d   %d Coins each", row.name, row.count, row.rate), UDim2.new(1, 0, 0, 24), true)
-		local sellOne = Widgets.Button(body, ui.SellOne, function()
-			sell(row.itemId, 1)
-		end)
-		sellOne.Size = UDim2.new(1, 0, 0, 40)
-		local sellAll = Widgets.Button(body, ui.SellAll .. " (" .. tostring(math.min(row.count, MerchantConfig.MaxPerSale)) .. ")", function()
-			sell(row.itemId, math.min(row.count, MerchantConfig.MaxPerSale))
-		end)
-		sellAll.Size = UDim2.new(1, 0, 0, 40)
+	if MerchantConfig.TradingEnabled == true then
+		local profile = getProfile and getProfile() or nil
+		local rows = rowsFor(profile)
+		for _, row in ipairs(rows) do
+			Widgets.Label(body, string.format("%s  x%d", row.name, row.count), UDim2.new(1, 0, 0, 24), true)
+		end
 	end
 end
 

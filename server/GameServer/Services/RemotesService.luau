@@ -45,7 +45,7 @@ end
 function RemotesService.Bind(ctx, name, limit, handler)
 	local remote = ctx.remotes[name]
 	if not remote then
-		error("[Kurkito] Remote mancante: " .. tostring(name))
+		error("[Kurkito] Missing remote: " .. tostring(name))
 	end
 	remote.OnServerInvoke = function(player, payload)
 		if typeof(player) ~= "Instance" or not player:IsA("Player") or player.Parent == nil then
@@ -82,7 +82,7 @@ function RemotesService.Bind(ctx, name, limit, handler)
 		end
 		local ok, result = xpcall(handler, debug.traceback, player, payload or {})
 		if not ok then
-			warn("[Kurkito] Errore remote " .. name .. ": " .. tostring(result))
+			warn("[Kurkito] Remote error " .. name .. ": " .. tostring(result))
 			return { ok = false, error = "Internal error." }
 		end
 		if type(result) ~= "table" then

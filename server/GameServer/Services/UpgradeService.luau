@@ -12,10 +12,12 @@ local UpgradeService = {}
 
 local function heroOf(player)
 	local data = PlayerData.Get(player)
-	if not data or data.selectedHero == "" then
+	local hero = data and data.heroes and data.heroes.Warrior
+	if not data or type(hero) ~= "table" then
 		return nil, nil, "No active hero."
 	end
-	return data, data.heroes[data.selectedHero], nil
+	data.selectedHero = "Warrior"
+	return data, hero, nil
 end
 
 function UpgradeService.UpgradeStat(player, statId)
@@ -26,7 +28,7 @@ function UpgradeService.UpgradeStat(player, statId)
 	if not hero then
 		return { ok = false, error = reason }
 	end
-	local classDef = HeroConfig.Classes[data.selectedHero]
+	local classDef = HeroConfig.Classes.Warrior
 	local allowed = false
 	for _, candidate in ipairs(classDef.stats) do
 		if candidate == statId then
@@ -73,7 +75,7 @@ function UpgradeService.SpendPoint(player, kind, id)
 	if kind == "skill" then
 		maxRank = AbilityConfig.MaxRank
 		local ability = nil
-		for _, candidate in ipairs(AbilityConfig[data.selectedHero]) do
+		for _, candidate in ipairs(AbilityConfig.Warrior) do
 			if candidate.id == id then
 				ability = candidate
 			end

@@ -248,6 +248,9 @@ local function buildGraveWilds(root, arena, center)
 	TribalKit.Tuft(root, "ScrubA", Vector3.new(center.X - 50, 1, center.Z + 40), 1.2)
 	TribalKit.Tuft(root, "ScrubB", Vector3.new(center.X + 52, 1, center.Z - 36), 1)
 	PropKit.Part(root, "Ribs", Vector3.new(2.2, 0.3, 1.4), CFrame.new(center.X + edge - 2, 1.3, center.Z - edge + 12) * CFrame.Angles(0, 0.5, 0), BONE, Enum.Material.SmoothPlastic, false)
+	TribalKit.Banner(root, "RuinBanner", Vector3.new(center.X - edge + 6, 1, center.Z - edge + 8), 0.4, RED)
+	PropKit.Part(root, "FallenPost", Vector3.new(6, 0.45, 0.45), CFrame.new(center.X + edge - 10, 1.4, center.Z + 8) * CFrame.Angles(0, 0.6, math.rad(80)), WOOD, Enum.Material.Wood, false)
+	TribalKit.Skull(root, "RuinSkull", CFrame.new(center.X - edge + 12, 1.8, center.Z + edge - 16), 1.2)
 	return zSouth
 end
 
@@ -282,7 +285,7 @@ local function buildArena(arenas, paths, arena)
 	local back = PropKit.Part(root, "ReturnPad", Vector3.new(10, 1, 10), CFrame.new(center.X, 1.6, center.Z - 48), BONE:Lerp(EARTH, 0.4), Enum.Material.Wood, true, nil, true)
 	PropKit.Prompt(back, "Return", "Lobby", "Lobby", {}, WorldTextConfig.Prompt("Default"))
 
-	if arena.index < 15 then
+	if arena.index > 1 and arena.index < 15 then
 		local nextCenter = WorldLayout.ArenaCenter(arena.index + 1)
 		local fromZ = center.Z + WorldLayout.ArenaHalf()
 		local toZ = nextCenter.Z - WorldLayout.ArenaHalf()
@@ -339,6 +342,9 @@ local function buildVillage(lobby)
 	end
 	TribalKit.Crate(lobby, "StoreCrate", CFrame.new(-188, 1.8, -60))
 	TribalKit.Basket(lobby, "StoreBasket", CFrame.new(-198, 1.7, -124))
+	TribalKit.Skull(lobby, "RackSkull", CFrame.new(-170, 2.2, -70), 0.9)
+	TribalKit.LogBench(lobby, "LogC", CFrame.new(-240, 1.6, -130) * CFrame.Angles(0, 0.8, 0))
+	PropKit.Rock(lobby, "VillageRockC", Vector3.new(-160, 1, -160), 1.1, Color3.fromRGB(96, 88, 78))
 end
 
 local function buildMerchant(lobby)
@@ -350,32 +356,33 @@ end
 
 local function buildFeaturedEggs(lobby)
 	local eggRoot = PropKit.Folder(lobby, "EggZone")
-	local arenaEgg = PetConfig.GetEgg(1)
-	local premium = PetConfig.SpecialEggs[1]
+	local coinEgg = PetConfig.GetWorldEgg("coin")
+	local advancedEgg = PetConfig.GetWorldEgg("advanced")
+	local premium = PetConfig.GetWorldEgg("premium")
 	local specs = {
 		{
 			name = "CoinEgg",
 			position = WorldLayout.CoinEgg(),
 			color = Color3.fromRGB(196, 150, 96),
 			kind = "coin",
-			text = Strings.CoinEggSign(arenaEgg.cost, EggService.OddsText(arenaEgg.pool)),
+			text = Strings.CoinEggSign(coinEgg.cost, EggService.OddsText(coinEgg.pool)),
 			category = "EggPrice",
 			action = "Open",
 			object = "Coin Egg",
-			remote = "OpenEgg",
-			attributes = { ArenaIndex = 1 },
+			remote = "OpenWorldEgg",
+			attributes = { WorldEgg = "coin" },
 		},
 		{
 			name = "AdvancedEgg",
 			position = WorldLayout.AdvancedEgg(),
 			color = Color3.fromRGB(150, 78, 46),
 			kind = "advanced",
-			text = Strings.AdvancedEggSign(),
+			text = Strings.AdvancedEggSign(advancedEgg.cost),
 			category = "EggPrice",
 			action = "Open",
 			object = "Advanced Coin Egg",
-			remote = "OpenBestEgg",
-			attributes = nil,
+			remote = "OpenWorldEgg",
+			attributes = { WorldEgg = "advanced" },
 		},
 		{
 			name = "PremiumEgg",
@@ -473,7 +480,7 @@ end
 
 local function buildServices(lobby)
 	local root = PropKit.Folder(lobby, "Services")
-	serviceShrine(root, "HeroPad", WorldLayout.HeroSwitch(), Color3.fromRGB(168, 104, 58), "Tribe Circle\nChange hero", "Hero", "Interaction")
+	serviceShrine(root, "HeroPad", WorldLayout.HeroSwitch(), Color3.fromRGB(168, 104, 58), "Warrior\nWorld 0 hero", "Hero", "Interaction")
 	serviceShrine(root, "UpgradePad", WorldLayout.Upgrades(), Color3.fromRGB(92, 122, 86), "Upgrades\nSpend coins", "UpgradeInfo", "UpgradeStation")
 	serviceShrine(root, "FusionPad", WorldLayout.Fusion(), Color3.fromRGB(120, 96, 64), "Pet Fusion\n5 identical = 1 evolved", "FusionInfo", "Interaction")
 	serviceShrine(root, "RebirthPad", WorldLayout.Rebirth(), Color3.fromRGB(140, 64, 48), "Rebirth Altar\nMastery 50", "Rebirth", "RebirthInfo")
@@ -565,7 +572,9 @@ function WorldBuilder.Build()
 	PropKit.Folder(world, "Effects")
 	buildLobby(paths, world)
 	for _, arena in ipairs(ArenaConfig) do
-		buildArena(arenas, paths, arena)
+		if arena.index == 1 then
+			buildArena(arenas, paths, arena)
+		end
 	end
 	print("[Kurkito] World 0 built (" .. GameConfig.WorldBuildId .. ").")
 	return world

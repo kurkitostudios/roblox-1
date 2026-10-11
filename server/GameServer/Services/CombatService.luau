@@ -50,8 +50,8 @@ local function arenaAllowed(player, enemy)
 	if not data or data.selectedHero == "" then
 		return false
 	end
-	local hero = data.heroes[data.selectedHero]
-	return hero.unlockedArenas[tostring(enemy.arenaIndex)] == true
+	local hero = data.heroes.Warrior
+	return hero ~= nil and hero.unlockedArenas[tostring(enemy.arenaIndex)] == true
 end
 
 function CombatService.DamagePlayer(player, rawAmount)
@@ -103,6 +103,17 @@ local function pickCredit(enemy)
 		damage[userId] = nil
 	end
 	return nil
+end
+
+function CombatService.ApplySlow(player, seconds, scale)
+	local runtime = RuntimeState.Get(player)
+	local now = os.clock()
+	runtime.slowUntil = now + (seconds or 1)
+	runtime.slowScale = scale or 0.65
+	local character = player.Character
+	if character then
+		character:SetAttribute("KurkitoStunnedUntil", workspace:GetServerTimeNow() + (seconds or 1))
+	end
 end
 
 function CombatService.GrantRewards(enemy)
@@ -404,18 +415,39 @@ function CombatService.Tick(dt)
 					runtime.mana = math.min(stats.maxMana, runtime.mana + stats.manaRegen * dt)
 				end
 				refreshEngagement(player, runtime, root)
+				local _, humanoid = characterParts(player)
+				if humanoid then
+					if runtime.slowUntil and now < runtime.slowUntil then
+						humanoid.WalkSpeed = stats.walkSpeed * (runtime.slowScale or 0.65)
+					else
+						humanoid.WalkSpeed = stats.walkSpeed
+					end
+				end
 				local threats = threatList(player, runtime, stats.attackRange)
+				local character = player.Character
+				if character then
+					character:SetAttribute("KurkitoCombat", #threats > 0)
+				end
 				if #threats > 0 and now - runtime.lastAttack >= stats.attackInterval then
 					runtime.lastAttack = now
+					runtime.combo = (runtime.combo or 0) + 1
+					local swingKind = "attack1"
+					if runtime.combo % 3 == 0 then
+						swingKind = "smash"
+					elseif runtime.combo % 3 == 2 then
+						swingKind = "attack2"
+					end
 					EnemyService.Damage(threats[1].enemy, player, stats.damage)
-					CombatFx.BasicHit(player, data.selectedHero, root.Position, threats[1].enemy.root.Position, HeroConfig.Classes[data.selectedHero].color)
+					CombatFx.BasicHit(player, "Warrior", root.Position, threats[1].enemy.root.Position, HeroConfig.Classes.Warrior.color, swingKind)
 				end
-				local hero = data.heroes[data.selectedHero]
-				for _, ability in ipairs(AbilityConfig[data.selectedHero]) do
+				local hero = data.heroes.Warrior
+				if hero then
+				for _, ability in ipairs(AbilityConfig.Warrior) do
 					if Rules.AbilityUnlocked(hero.mastery, ability) then
 						-- Il rango 0 è il valore base. I punti aumentano il rango.
 						castAbility(player, runtime, stats, ability, hero.skillRanks[ability.id] or 0, root)
 					end
+				end
 				end
 			end
 		end
@@ -442,7 +474,7 @@ function CombatService.PushVitals(player)
 	local runtime = RuntimeState.Get(player)
 	local now = os.clock()
 	local cooldowns = {}
-	for _, ability in ipairs(AbilityConfig[data.selectedHero]) do
+	for _, ability in ipairs(AbilityConfig.Warrior) do
 		local untilTime = runtime.cooldowns[ability.id] or 0
 		cooldowns[ability.id] = math.max(0, untilTime - now)
 	end

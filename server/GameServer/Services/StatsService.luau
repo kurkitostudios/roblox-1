@@ -12,9 +12,12 @@ function StatsService.Compute(player)
 	if not data or data.selectedHero == "" then
 		return nil
 	end
-	local heroId = data.selectedHero
+	local heroId = "Warrior"
 	local classDef = HeroConfig.Classes[heroId]
 	local hero = data.heroes[heroId]
+	if type(hero) ~= "table" then
+		return nil
+	end
 	local runtime = RuntimeState.Get(player)
 	local now = os.clock()
 	local buffs = runtime.buffs

@@ -106,6 +106,13 @@ local function stepGrave(actor, model, now)
 			pose(motors.ArmR, math.rad(30), 0, math.rad(16))
 			pose(motors.LegL, math.rad(24) * strike, 0, 0)
 			pose(motors.LegR, math.rad(-24) * strike, 0, 0)
+		elseif move == "recover" then
+			pose(motors.Torso, math.rad(28), 0, 0)
+			pose(motors.ArmL, math.rad(55), 0, math.rad(-18))
+			pose(motors.ArmR, math.rad(55), 0, math.rad(18))
+			pose(motors.Head, math.rad(18), 0, 0)
+			pose(motors.LegL, math.rad(22), 0, 0)
+			pose(motors.LegR, math.rad(16), 0, 0)
 		else
 			pose(motors.ArmR, math.rad(-65) * strike, 0, math.rad(20) * strike)
 			pose(motors.ArmL, math.rad(-20) * strike, 0, 0)
@@ -233,6 +240,18 @@ local function stepWarrior(character, now)
 		return
 	end
 	local synced = workspace:GetServerTimeNow()
+	local stunnedUntil = character:GetAttribute("KurkitoStunnedUntil") or 0
+	if stunnedUntil > synced and synced > stunnedUntil - 3 then
+		local wobble = math.sin(now * 9)
+		pose(rig.waist, math.rad(18), math.rad(12) * wobble, 0)
+		pose(rig.neck, math.rad(22), math.rad(8) * wobble, 0)
+		pose(rig.shoulderR, math.rad(46), 0, math.rad(12))
+		pose(rig.shoulderL, math.rad(40), 0, math.rad(-10))
+		pose(rig.hipR, math.rad(8), 0, 0)
+		pose(rig.hipL, math.rad(6), 0, 0)
+		pose(rig.weapon, math.rad(24), 0, 0)
+		return
+	end
 	local hitAt = character:GetAttribute("KurkitoHitAt") or 0
 	if hitAt > 0 and synced - hitAt < 0.28 then
 		local flinch = math.sin(math.clamp((synced - hitAt) / 0.28, 0, 1) * math.pi)
@@ -255,31 +274,67 @@ local function stepWarrior(character, now)
 	local kind = character:GetAttribute("KurkitoSwingKind") or ""
 	if swingAt > 0 then
 		local age = synced - swingAt
-		local window = kind == "spinning_slash" and 0.72 or 0.58
-		if age <= window then
+		local window = kind == "spinning_slash" and 0.78 or (kind == "smash" and 0.72 or 0.64)
+		if age >= 0 and age <= window then
 			local t = math.clamp(age / window, 0, 1)
-			local strike = math.sin(t * math.pi)
-			if kind == "spinning_slash" then
-				pose(rig.waist, math.rad(8), math.rad(360) * t, 0)
-				pose(rig.shoulderR, math.rad(-40) * strike, 0, math.rad(30))
-				pose(rig.shoulderL, math.rad(-30) * strike, 0, math.rad(-20))
-				pose(rig.weapon, math.rad(-50) * strike, 0, math.rad(40) * strike)
-			elseif kind == "steel_skin" then
-				pose(rig.shoulderR, math.rad(-20) * strike, 0, math.rad(-40) * strike)
-				pose(rig.shoulderL, math.rad(-20) * strike, 0, math.rad(40) * strike)
-				pose(rig.weapon, math.rad(10) * strike, 0, 0)
-			elseif kind == "fury" then
-				pose(rig.shoulderR, math.rad(-90) * strike, 0, math.rad(20))
-				pose(rig.shoulderL, math.rad(-90) * strike, 0, math.rad(-20))
-				pose(rig.waist, math.rad(-8) * strike, 0, 0)
-				pose(rig.weapon, math.rad(-30) * strike, 0, 0)
+			local stage = "recover"
+			local amount = 0
+			if t < 0.22 then
+				stage = "windup"
+				amount = t / 0.22
+			elseif t < 0.48 then
+				stage = "swing"
+				amount = (t - 0.22) / 0.26
+			elseif t < 0.62 then
+				stage = "impact"
+				amount = 1
+			elseif t < 0.82 then
+				stage = "follow"
+				amount = 1 - ((t - 0.62) / 0.2)
 			else
-				local wind = t < 0.35 and (t / 0.35) or (1 - (t - 0.35) / 0.65)
-				pose(rig.shoulderR, math.rad(-125) * wind, 0, math.rad(18) * wind)
-				pose(rig.shoulderL, math.rad(-35) * wind, 0, math.rad(-10) * wind)
-				pose(rig.waist, math.rad(18) * wind, math.rad(22) * wind, 0)
-				pose(rig.weapon, math.rad(-55) * wind, 0, math.rad(12) * wind)
-				pose(rig.hipR, math.rad(10) * wind, 0, 0)
+				stage = "recover"
+				amount = 1 - ((t - 0.82) / 0.18)
+			end
+			local power = stage == "windup" and amount or (stage == "recover" and math.max(0, amount) or 1)
+			if kind == "steel_skin" then
+				pose(rig.shoulderR, math.rad(-18) * power, 0, math.rad(-48) * power)
+				pose(rig.shoulderL, math.rad(-18) * power, 0, math.rad(48) * power)
+				pose(rig.waist, math.rad(6) * power, 0, 0)
+				pose(rig.weapon, math.rad(16) * power, 0, 0)
+				pose(rig.neck, math.rad(-6) * power, 0, 0)
+			elseif kind == "fury" then
+				pose(rig.shoulderR, math.rad(-100) * power, 0, math.rad(18))
+				pose(rig.shoulderL, math.rad(-100) * power, 0, math.rad(-18))
+				pose(rig.waist, math.rad(-10) * power, 0, 0)
+				pose(rig.weapon, math.rad(-40) * power, 0, 0)
+				pose(rig.hipR, math.rad(12) * power, 0, 0)
+				pose(rig.hipL, math.rad(12) * power, 0, 0)
+			elseif kind == "spinning_slash" or kind == "smash" then
+				local lift = stage == "windup" and -0.35 * amount or (stage == "swing" and (-0.35 + 1.2 * amount) or (stage == "impact" and 0.9 or 0.35 * power))
+				pose(rig.shoulderR, math.rad(-130) * lift, 0, math.rad(16))
+				pose(rig.shoulderL, math.rad(-40) * power, 0, math.rad(-12))
+				pose(rig.waist, math.rad(22) * (stage == "windup" and amount or power), math.rad(kind == "spinning_slash" and 70 or 28) * power, 0)
+				pose(rig.weapon, math.rad(-70) * lift, 0, math.rad(18) * power)
+				pose(rig.hipR, math.rad(16) * power, 0, 0)
+				pose(rig.hipL, math.rad(-8) * power, 0, 0)
+				pose(rig.neck, math.rad(stage == "impact" and 10 or -4), 0, 0)
+			elseif kind == "attack2" then
+				local sweep = stage == "windup" and -0.4 * amount or (stage == "swing" and (-0.2 + amount) or power)
+				pose(rig.shoulderR, math.rad(-70) * sweep, math.rad(30) * power, math.rad(24) * power)
+				pose(rig.shoulderL, math.rad(20) * power, 0, math.rad(-16))
+				pose(rig.waist, math.rad(8) * power, math.rad(-36) * sweep, 0)
+				pose(rig.weapon, math.rad(-30) * sweep, 0, math.rad(20) * power)
+				pose(rig.hipR, math.rad(14) * power, 0, 0)
+				pose(rig.hipL, math.rad(-10) * power, 0, 0)
+			else
+				local sweep = stage == "windup" and -0.45 * amount or (stage == "swing" and amount or power * 0.4)
+				pose(rig.shoulderR, math.rad(-90) * sweep, 0, math.rad(20) * power)
+				pose(rig.shoulderL, math.rad(-16) * power, 0, math.rad(-8))
+				pose(rig.waist, math.rad(12) * power, math.rad(24) * sweep, 0)
+				pose(rig.weapon, math.rad(-48) * sweep, 0, math.rad(10) * power)
+				pose(rig.hipR, math.rad(10) * power, 0, 0)
+				pose(rig.hipL, math.rad(-6) * power, 0, 0)
+				pose(rig.neck, math.rad(stage == "impact" and 8 or 0), 0, 0)
 			end
 			return
 		end
@@ -302,6 +357,17 @@ local function stepWarrior(character, now)
 	end
 	local moving = horizontal > 1.4
 	local running = horizontal > 16
+	if not moving and character:GetAttribute("KurkitoCombat") == true then
+		local brace = math.sin(now * 2.2)
+		pose(rig.waist, math.rad(10), math.rad(8), 0)
+		pose(rig.shoulderR, math.rad(-36) + math.rad(4) * brace, 0, math.rad(18))
+		pose(rig.shoulderL, math.rad(12), 0, math.rad(-14))
+		pose(rig.weapon, math.rad(-22), 0, math.rad(8))
+		pose(rig.hipR, math.rad(12), 0, 0)
+		pose(rig.hipL, math.rad(8), 0, 0)
+		pose(rig.neck, math.rad(-4), 0, 0)
+		return
+	end
 	if running then
 		local step = math.sin(now * 12)
 		pose(rig.waist, math.rad(14), 0, math.rad(4) * step)
@@ -454,17 +520,15 @@ function Motion.Start()
 				end
 			end
 		end
+		for character in pairs(heroRigs) do
+			if not character.Parent then
+				heroRigs[character] = nil
+			end
+		end
 		for _, player in ipairs(Players:GetPlayers()) do
 			local character = player.Character
-			local heroId = character and (character:GetAttribute("KurkitoHero") or player:GetAttribute("KurkitoHero"))
-			if character and heroId then
-				if heroId == "Warrior" then
-					stepWarrior(character, clock)
-				else
-					stepHero(character, clock)
-				end
-			elseif character then
-				heroRigs[character] = nil
+			if character and character.Parent then
+				stepWarrior(character, clock)
 			end
 		end
 	end)

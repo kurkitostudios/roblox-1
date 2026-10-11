@@ -1,4 +1,4 @@
-# Setup in Roblox Studio — Build 003
+# Setup in Roblox Studio — Build 003.1
 
 Questo progetto si sincronizza con **Roblox Studio Script Sync**. Non usare Rojo, non installare Wally e non aggiungere un file di progetto Rojo.
 
@@ -115,8 +115,9 @@ Un profilo nuovo in Studio parte con 500 monete di test. In produzione parte da 
 1. In Studio apri **View → Output**.
 2. Cerca le righe `[Kurkito]`.
 3. Errori attesi se manca un collegamento:
-   - `Manca ReplicatedStorage.Shared`
-   - `Remote non creati` sul client
+   - `ReplicatedStorage.Shared is missing`
+   - `Remotes were not created` on the client
 4. Un traceback con `Shared` o `attempt to index nil` subito dopo Play di solito significa che `Shared` o `GameClient` non sono sincronizzati, oppure che uno script ha il tipo sbagliato (per esempio un ModuleScript invece di un LocalScript). Controlla le estensioni della tabella sopra.
 5. `DataStore` / `StudioAccessToApisNotAllowed` senza API Services è previsto: la sessione di Studio continua in memoria.
-6. `TestSync` stampa ancora `Cursor Cloud e Roblox Studio collegati!`. Quella riga non indica che il gioco sia pronto: indica solo che il vecchio collegamento server funziona.
+6. All'avvio corretto compaiono `[Kurkito] Build 003.1 started. World 0 Warrior, lobby, Arena 1, automatic combat.` e `[Kurkito] World 0 built (world0-build003-1).` Il client stampa `[Kurkito] Client Build 003.1 ready.`
+7. `TestSync` stampa ancora `Cursor Cloud e Roblox Studio collegati!`. Quella riga non indica che il gioco sia pronto: indica solo che il vecchio collegamento server funziona.

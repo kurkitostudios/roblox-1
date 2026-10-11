@@ -1,13 +1,10 @@
--- Vendita bottino al mercante tribale. Tariffe PROVVISORIE.
--- Non è l'economia finale: solo materiali e collezionabili, pronti da estendere.
--- Non vende equipaggiamento, pozioni o Pet.
+-- Vendita disattivata finché non esiste un catalogo approvato.
+-- TradingEnabled deve restare false. Le tariffe non vengono applicate.
 
 local MerchantConfig = {
-	Rates = {
-		materials = 5,
-		collectibles = 18,
-	},
-	MaxPerSale = 100,
+	TradingEnabled = false,
+	Rates = {},
+	MaxPerSale = 0,
 }
 
 function MerchantConfig.Price(category, count)

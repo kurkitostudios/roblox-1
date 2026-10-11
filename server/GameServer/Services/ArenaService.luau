@@ -13,10 +13,12 @@ local ArenaService = {}
 
 local function heroOf(player)
 	local data = PlayerData.Get(player)
-	if not data or data.selectedHero == "" then
-		return nil, nil, "Select a hero."
+	local hero = data and data.heroes and data.heroes.Warrior
+	if not data or type(hero) ~= "table" then
+		return nil, nil, "The Warrior is not ready."
 	end
-	return data, data.heroes[data.selectedHero], nil
+	data.selectedHero = "Warrior"
+	return data, hero, nil
 end
 
 local function arenaFromPayload(payload)
@@ -79,6 +81,9 @@ local function teleport(player, position, spawnLocation)
 end
 
 function ArenaService.Unlock(player, arenaIndex)
+	if arenaIndex ~= 1 then
+		return { ok = false, error = Strings.Error.ArenaUnavailable }
+	end
 	local arena = ArenaConfig.Get(arenaIndex)
 	if not arena then
 		return { ok = false, error = "Arena does not exist." }
@@ -112,6 +117,9 @@ end
 function ArenaService.TeleportToArena(player, arenaIndex)
 	if not ArenaService.CanTravel(player) then
 		return { ok = false, error = "Travel is available from the lobby, gates, or arenas." }
+	end
+	if arenaIndex ~= 1 then
+		return { ok = false, error = Strings.Error.ArenaUnavailable }
 	end
 	local arena = ArenaConfig.Get(arenaIndex)
 	if not arena then

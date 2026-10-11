@@ -10,6 +10,7 @@ local shared = require(script.Parent.SharedLoader)
 local EnemyConfig = shared("EnemyConfig")
 local WorldLayout = shared("WorldLayout")
 local GameConfig = shared("GameConfig")
+local Rules = shared("Rules")
 local WorldTextConfig = shared("WorldTextConfig")
 local CreatureKit = require(script.Parent.CreatureKit)
 local CombatFx = require(script.Parent.CombatFx)
@@ -103,7 +104,7 @@ function EnemyService.Start(context)
 	end
 	table.clear(enemies)
 	table.clear(byId)
-	for arenaIndex = 1, 15 do
+	for arenaIndex = 1, 1 do
 		local center = WorldLayout.ArenaCenter(arenaIndex)
 		for _, spawn in ipairs(EnemyConfig.SpawnPlan(arenaIndex)) do
 			local offset = EnemyConfig.SpawnOffset(spawn.slot, spawn.boss)
@@ -180,7 +181,7 @@ local function targetAllowed(player, arenaIndex)
 	if not data or data.selectedHero == "" then
 		return false
 	end
-	local hero = data.heroes[data.selectedHero]
+	local hero = data.heroes.Warrior
 	return hero ~= nil and hero.unlockedArenas[tostring(arenaIndex)] == true
 end
 
@@ -309,8 +310,24 @@ function EnemyService.Kill(enemy)
 	enemy.rewarded = true
 	setState(enemy, "Dead")
 	enemy.target = nil
-	enemy.humanoid.WalkSpeed = 0
-	enemy.root.Anchored = true
+	if enemy.humanoid then
+		enemy.humanoid.WalkSpeed = 0
+	end
+	if enemy.root then
+		enemy.root.Anchored = true
+	end
+	if enemy.def and enemy.def.behavior == "chieftain" then
+		EnemyService.DismissSummons(enemy)
+	end
+	if enemy.noReward then
+		enemy.expired = true
+		task.delay(1.2, function()
+			if enemy.model then
+				enemy.model:Destroy()
+			end
+		end)
+		return
+	end
 	if ctx and ctx.services.CombatService then
 		ctx.services.CombatService.GrantRewards(enemy)
 	end
@@ -400,7 +417,7 @@ local function damageFor(enemy, move)
 	elseif move == "roar" then
 		return amount * 0.5
 	elseif move == "summon" then
-		return amount * 0.35
+		return 0
 	elseif move == "leap" then
 		return amount * 1.05
 	end
@@ -472,8 +489,114 @@ local function chaseProfile(enemy, distance)
 	return speed, move
 end
 
+local summonSerial = 0
+
+function EnemyService.DismissSummons(boss)
+	for _, enemy in ipairs(enemies) do
+		if enemy.summonedBy == boss.id and not enemy.expired then
+			enemy.expired = true
+			enemy.rewarded = true
+			enemy.target = nil
+			setState(enemy, "Dead")
+			if enemy.humanoid then
+				enemy.humanoid.WalkSpeed = 0
+			end
+			if enemy.model then
+				enemy.model:Destroy()
+			end
+		end
+	end
+end
+
+local function countSummons(bossId)
+	local alive = 0
+	for _, enemy in ipairs(enemies) do
+		if enemy.summonedBy == bossId and not enemy.expired and enemy.state ~= "Dead" then
+			alive += 1
+		end
+	end
+	return alive
+end
+
+function EnemyService.SummonDead(boss)
+	if not boss or not boss.root or boss.def.behavior ~= "chieftain" then
+		return 0
+	end
+	local limits = EnemyConfig.Summon
+	local room = Rules.SummonRoom(countSummons(boss.id), limits.MaxActive, limits.PerCast)
+	if room <= 0 then
+		return 0
+	end
+	local world = workspace:FindFirstChild("KurkitoWorld")
+	local parent = world and world:FindFirstChild("Enemies")
+	if not parent then
+		return 0
+	end
+	local def = EnemyConfig.RisenDead
+	local spawned = 0
+	for index = 1, room do
+		local angle = (index / room) * math.pi * 2
+		local offset = Vector3.new(math.cos(angle) * 7, 0, math.sin(angle) * 7)
+		local position = boss.root.Position + offset
+		local center = WorldLayout.ArenaCenter(boss.arenaIndex)
+		local flat = Vector3.new(position.X - center.X, 0, position.Z - center.Z)
+		if flat.Magnitude > WorldLayout.ArenaHalf() - 18 then
+			position = center + flat.Unit * (WorldLayout.ArenaHalf() - 18)
+		end
+		position = Vector3.new(position.X, boss.spawnPosition.Y, position.Z)
+		summonSerial += 1
+		local id = boss.id .. "_summon_" .. tostring(summonSerial)
+		local model, humanoid, root, align = CreatureKit.Build(def, position)
+		model.Name = "Enemy_" .. id
+		model.Parent = parent
+		pcall(function()
+			root:SetNetworkOwner(nil)
+		end)
+		local record = {
+			id = id,
+			def = def,
+			arenaIndex = boss.arenaIndex,
+			model = model,
+			humanoid = humanoid,
+			root = root,
+			align = align,
+			spawnPosition = position,
+			state = "Idle",
+			target = nil,
+			stateSince = os.clock(),
+			leashStartedAt = nil,
+			lastAttack = 0,
+			nextAttack = 0,
+			attackIndex = 0,
+			pending = nil,
+			damageByUserId = {},
+			lastHitUserId = nil,
+			rewarded = false,
+			generation = 1,
+			summonedBy = boss.id,
+			noReward = true,
+		}
+		local generation = record.generation
+		humanoid.Died:Connect(function()
+			if record.generation == generation then
+				EnemyService.Kill(record)
+			end
+		end)
+		table.insert(enemies, record)
+		byId[id] = record
+		spawned += 1
+	end
+	return spawned
+end
+
 function EnemyService.Tick(_dt)
 	local now = os.clock()
+	for index = #enemies, 1, -1 do
+		if enemies[index].expired then
+			byId[enemies[index].id] = nil
+			table.remove(enemies, index)
+		end
+	end
 	local leashSeconds = GameConfig.Combat.LeashSeconds
 	for _, enemy in ipairs(enemies) do
 		if enemy.state ~= "Dead" and enemy.state ~= "Respawning" and enemy.root.Parent then
@@ -500,6 +623,9 @@ function EnemyService.Tick(_dt)
 						enemy.leashStartedAt = now
 					elseif now - enemy.leashStartedAt >= leashSeconds then
 						enemy.target = nil
+						if enemy.def.behavior == "chieftain" then
+							EnemyService.DismissSummons(enemy)
+						end
 						setState(enemy, "Returning")
 						continue
 					end
@@ -541,7 +667,7 @@ function EnemyService.Tick(_dt)
 							enemy.humanoid.WalkSpeed = 0
 							enemy.stuck = 0
 							if enemy.pending then
-								if distance > reach + 8 then
+								if distance > reach + 10 then
 									enemy.pending = nil
 								elseif now >= (enemy.windupUntil or 0) then
 									local move = enemy.pending
@@ -549,14 +675,34 @@ function EnemyService.Tick(_dt)
 									enemy.lastAttack = now
 									enemy.nextAttack = now + cooldownFor(enemy, move)
 									local amount = damageFor(enemy, move)
-									CombatFx.Strike(move, enemy.root.Position, targetRoot.Position, strikeColor(enemy))
-									local extra = 2
-									if move == "roar" or move == "slam" or move == "leap" or move == "charge" then
-										extra = 6
+									local aim = enemy.aim or targetRoot.Position
+									if move == "leap" then
+										dashToward(enemy, aim, 8)
+									elseif move == "charge" then
+										dashToward(enemy, aim, EnemyConfig.Summon.ChargeDistance)
+									elseif move == "summon" then
+										EnemyService.SummonDead(enemy)
 									end
-									if amount > 0 and (targetRoot.Position - enemy.root.Position).Magnitude <= enemy.def.range + extra then
+									CombatFx.Strike(move, enemy.root.Position, aim, strikeColor(enemy))
+									local hitRange = enemy.def.range
+									if move == "roar" then
+										hitRange = EnemyConfig.Summon.RoarRadius
+									elseif move == "slam" then
+										hitRange = EnemyConfig.Summon.SlamRadius
+									elseif move == "leap" or move == "charge" then
+										hitRange = enemy.def.range + 2.5
+									elseif move == "smash" then
+										hitRange = enemy.def.range + 1.2
+									elseif move == "recover" or move == "summon" then
+										hitRange = 0
+									end
+									local gap = (targetRoot.Position - enemy.root.Position).Magnitude
+									if amount > 0 and gap <= hitRange then
 										if ctx and ctx.services.CombatService then
 											ctx.services.CombatService.DamagePlayer(enemy.target, amount)
+											if move == "roar" then
+												ctx.services.CombatService.ApplySlow(enemy.target, EnemyConfig.Summon.RoarSlowSeconds, EnemyConfig.Summon.RoarSlow)
+											end
 										end
 									end
 								end
@@ -564,13 +710,20 @@ function EnemyService.Tick(_dt)
 								if enemy.def.behavior then
 									local move = chooseMove(enemy)
 									enemy.pending = move
+									enemy.aim = targetRoot.Position
 									enemy.windupUntil = now + windupFor(move)
 									enemy.model:SetAttribute("KurkitoMove", move)
 									enemy.model:SetAttribute("KurkitoSwing", workspace:GetServerTimeNow())
-									if move == "leap" then
-										dashToward(enemy, targetRoot.Position, 10)
-									elseif move == "charge" then
-										dashToward(enemy, targetRoot.Position, 14)
+									if move == "slam" or move == "roar" or move == "charge" then
+										local at = enemy.root.Position
+										local radius = move == "roar" and EnemyConfig.Summon.RoarRadius or (move == "slam" and EnemyConfig.Summon.SlamRadius or 4)
+										if move == "charge" then
+											local flat = Vector3.new(targetRoot.Position.X - at.X, 0, targetRoot.Position.Z - at.Z)
+											if flat.Magnitude > 1 then
+												at = at + flat.Unit * 8
+											end
+										end
+										CombatFx.Telegraph(at, strikeColor(enemy), radius, windupFor(move))
 									end
 								elseif now - enemy.lastAttack >= enemy.def.interval then
 									enemy.lastAttack = now

@@ -18,8 +18,8 @@ function LootService.GrantEnemyDrops(player, enemyDef)
 	local rng = Random.new()
 	local grants = Rules.RollDrops(LootConfig.DropsFor(enemyDef), fortune, function()
 		return rng:NextNumber()
-	end, data.selectedHero)
-	local accepted = InventoryService.Grant(player, grants, data.selectedHero)
+	end, "Warrior")
+	local accepted = InventoryService.Grant(player, grants, "Warrior")
 	for _, drop in ipairs(accepted) do
 		local suffix = drop.count > 1 and (" x" .. tostring(drop.count)) or ""
 		Notifier.Send(player, "drop", drop.name .. suffix)

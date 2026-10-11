@@ -26,7 +26,7 @@ local HeroConfig = {
 		{
 			id = "class_mastery",
 			name = "Specialization",
-			description = "Warrior: Speed. Mage: Mana. Archer: Attack Speed.",
+			description = "Increases Warrior Speed.",
 			maxRank = 10,
 		},
 	},

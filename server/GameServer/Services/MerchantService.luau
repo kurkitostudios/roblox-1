@@ -36,6 +36,10 @@ function MerchantService.Sell(player, itemId, count)
 	if not inRange(player) then
 		return { ok = false, error = Strings.Error.MoveCloserMerchant }
 	end
+	-- Nessuna moneta finché il catalogo approvato non accende TradingEnabled e una tariffa.
+	if MerchantConfig.TradingEnabled ~= true then
+		return { ok = false, error = Strings.Error.TradingSoon }
+	end
 	if type(itemId) ~= "string" then
 		return { ok = false, error = Strings.Error.InvalidItem }
 	end
@@ -51,7 +55,7 @@ function MerchantService.Sell(player, itemId, count)
 		return { ok = false, error = Strings.Error.InvalidItem }
 	end
 	local rate = MerchantConfig.Rates[def.category]
-	if not rate then
+	if type(rate) ~= "number" or rate <= 0 then
 		return { ok = false, error = Strings.Error.MerchantNoBuy }
 	end
 	local data = PlayerData.Get(player)
@@ -68,7 +72,7 @@ function MerchantService.Sell(player, itemId, count)
 		return { ok = false, error = Strings.Error.NothingToSell }
 	end
 	local payout = rate * amount
-	data.coins = Rules.AddCoins(data.coins, payout, GameConfig.MaxCoins)
+	Rules.GrantEarnedCoins(data, payout, GameConfig.MaxCoins)
 	PlayerData.MarkDirty(player, true)
 	PlayerData.Save(player, false)
 	Notifier.Send(player, "reward", Strings.SoldLoot(def.name, amount, payout))

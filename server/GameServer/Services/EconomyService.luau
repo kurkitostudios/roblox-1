@@ -8,17 +8,17 @@ local EconomyService = {}
 
 function EconomyService.GrantBase(player, baseAmount)
 	local data = PlayerData.Get(player)
-	if not data or data.selectedHero == "" then
+	local hero = data and data.heroes and data.heroes.Warrior
+	if not data or type(hero) ~= "table" then
 		return 0
 	end
-	local hero = data.heroes[data.selectedHero]
 	local amount = Rules.RewardCoins(baseAmount, hero.rebirths, HeroConfig.RebirthCoinBonus, GameConfig.MaxCoins)
 	if amount <= 0 then
 		return 0
 	end
-	data.coins = Rules.AddCoins(data.coins, amount, GameConfig.MaxCoins)
+	local gained = Rules.GrantEarnedCoins(data, amount, GameConfig.MaxCoins)
 	PlayerData.MarkDirty(player, false)
-	return amount
+	return gained
 end
 
 function EconomyService.TrySpend(player, amount)

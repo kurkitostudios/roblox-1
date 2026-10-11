@@ -11,7 +11,7 @@ _G.__KURKITO_SERVER_STARTED = true
 
 local sharedFolder = ReplicatedStorage:WaitForChild("Shared", 20)
 if not sharedFolder then
-	error("[Kurkito] Manca ReplicatedStorage.Shared. Crea la cartella e collega Script Sync a shared/Shared. Vedi docs/SETUP_ROBLOX_STUDIO.md")
+	error("[Kurkito] ReplicatedStorage.Shared is missing. Create the folder and connect Script Sync to shared/Shared. See docs/SETUP_ROBLOX_STUDIO.md")
 end
 
 local servicesFolder = script.Parent:WaitForChild("Services")
@@ -84,4 +84,4 @@ StudioCommands.Start()
 GameLoop.Start(ctx)
 PlayerDataService.HookPlayers()
 
-print("[Kurkito] Build 003 started. World 0 lobby, Arena 1, automatic combat.")
+print("[Kurkito] Build 003.1 started. World 0 Warrior, lobby, Arena 1, automatic combat.")

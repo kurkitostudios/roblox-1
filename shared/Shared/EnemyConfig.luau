@@ -98,6 +98,36 @@ function EnemyConfig.SpawnPlan(arenaIndex)
 	return plan
 end
 
+-- Non è nel pool pet e non entra nello spawn plan. Ricompense a zero: anti-farm.
+EnemyConfig.RisenDead = {
+	id = "risen_dead",
+	name = "Risen Dead",
+	arena = 1,
+	rarity = "Common",
+	hp = 28,
+	dmg = 4,
+	speed = 12,
+	aggro = 16,
+	leash = 36,
+	range = 4.4,
+	interval = 1.15,
+	xp = 0,
+	coins = 0,
+	respawn = 0,
+	scale = 0.82,
+	behavior = "scavenger",
+}
+
+EnemyConfig.Summon = {
+	MaxActive = 3,
+	PerCast = 2,
+	RoarRadius = 11,
+	SlamRadius = 8,
+	ChargeDistance = 12,
+	RoarSlow = 0.62,
+	RoarSlowSeconds = 1.25,
+}
+
 function EnemyConfig.SpawnOffset(slot, boss)
 	if boss then
 		return Vector3.new(0, 5, 18)

@@ -9,11 +9,15 @@ local Strings = {
 		InvalidResponse = "Invalid response.",
 		RateLimited = "Too many requests. Wait a moment.",
 		Internal = "Internal error.",
-		SelectHero = "Select a hero.",
+		SelectHero = "The Warrior is the only hero.",
 		NoActiveHero = "No active hero.",
 		InvalidHero = "Invalid hero.",
-		NoOtherHero = "You have no other unlocked hero.",
-		SwitchInLobby = "Switch heroes in the lobby or at the hero post.",
+		NoOtherHero = "World 0 has one hero: the Warrior.",
+		OneHero = "World 0 has one hero: the Warrior.",
+		SwitchInLobby = "World 0 has one hero: the Warrior.",
+		ArenaUnavailable = "This arena is not available in World 0. Saved progress is kept.",
+		TradingSoon = "Trading will be available soon.",
+		WorldEggOnly = "Arena eggs are not available in World 0.",
 		UpgradeInLobby = "Upgrade in the lobby or at the upgrade post.",
 		SpendInLobby = "Spend points in the lobby or at the hero post.",
 		StatUnavailable = "That stat is not available for this hero.",
@@ -28,7 +32,7 @@ local Strings = {
 		InvalidEgg = "Invalid egg.",
 		EggUnavailable = "That egg is not available.",
 		MoveCloserEgg = "Move closer to the egg.",
-		UnlockArenaFirst = "Unlock the matching arena with your active hero.",
+		UnlockArenaFirst = "That egg is not available.",
 		EmptyEgg = "Egg table is empty. Coins refunded.",
 		PetNotGranted = "Pet was not granted. Coins refunded.",
 		InvalidShowcase = "Invalid showcase.",
@@ -37,7 +41,7 @@ local Strings = {
 		MoveCloserMerchant = "Move closer to the Tribal Merchant.",
 		MerchantNoBuy = "The merchant does not buy that.",
 		NothingToSell = "You do not have that loot.",
-		AdvancedEggLocked = "Unlock another arena to open the Advanced Coin Egg.",
+		AdvancedEggLocked = "The Advanced Coin Egg is a fixed World 0 egg.",
 		FusionBusy = "Fusion is already in progress.",
 		FuseInLobby = "Fuse pets in the lobby or at the fusion altar.",
 		InvalidSelection = "Invalid selection.",
@@ -161,7 +165,7 @@ function Strings.UpgradeHint(statId, cost)
 end
 
 function Strings.ChooseHeroFirst()
-	return "Choose a hero, then open the Upgrades menu."
+	return "The Warrior is ready. Open the Upgrades menu."
 end
 
 function Strings.FusionHint()
@@ -198,11 +202,11 @@ function Strings.RobuxEggSign(name, odds)
 end
 
 function Strings.CoinEggSign(cost, odds)
-	return "Coin Egg\n" .. Strings.Coins(cost) .. "\n" .. odds
+	return "Coin Egg\n" .. Strings.Coins(cost) .. "\nProvisional price\n" .. odds
 end
 
-function Strings.AdvancedEggSign()
-	return "Advanced Coin Egg\nHighest unlocked arena\nArenas 2–15"
+function Strings.AdvancedEggSign(cost)
+	return "Advanced Coin Egg\n" .. Strings.Coins(cost) .. "\nWorld 0 pets\nProvisional price"
 end
 
 function Strings.PremiumEggSign(odds)
@@ -216,8 +220,8 @@ end
 Strings.UI = {
 	Close = "Close",
 	Loading = "Loading data...",
-	ChooseHeroFirst = "Choose a hero first.",
-	Heroes = "Heroes",
+	ChooseHeroFirst = "The Warrior is ready. Open the Upgrades menu.",
+	Heroes = "Warrior",
 	Upgrades = "Upgrades",
 	Inventory = "Inventory",
 	Pets = "Pets",
@@ -229,8 +233,9 @@ Strings.UI = {
 	Fusion = "Fusion",
 	Eggs = "Eggs",
 	Active = " (active)",
-	LockedHero = "Locked. Complete quests to unlock this hero permanently.",
+	LockedHero = "Locked.",
 	UseHero = "Use ",
+	OneHeroBody = "World 0 has one hero. Mastery, skills, and Rebirth belong to the Warrior.",
 	SkillPoints = "Skill Points: ",
 	MaxLevel = "Maximum level",
 	Talents = "Talents",
@@ -272,23 +277,25 @@ Strings.UI = {
 	ShowOdds = "Show odds (no purchase)",
 	NotForSale = " · not for sale",
 	NoPurchase = "No purchase was made.",
-	SelectHeroTitle = "Choose your first hero",
-	SelectHeroBody = "World 0 has one hero: the Warrior, a prehistoric survivor with a heavy club. The choice is permanent. Other heroes unlock through quests.",
+	SelectHeroTitle = "World 0 Warrior",
+	SelectHeroBody = "You enter as the Warrior, a prehistoric survivor with a heavy club.",
 	Selected = "Selected: ",
 	ConfirmHint = ". Confirm to continue.",
-	TapHero = "Tap a hero, then confirm.",
-	ConfirmChoice = "Confirm choice",
-	SelectBeforeConfirm = "Select a hero before confirming.",
+	TapHero = "Enter as the Warrior.",
+	ConfirmChoice = "Enter World 0",
+	SelectBeforeConfirm = "Enter as the Warrior.",
 	ChoiceFailed = "Could not choose that hero.",
 	RebirthAvailable = "Available at Mastery 50, only at the tribal altar. Each Rebirth grants +10% XP and +10% Coins permanently for this hero.",
 	RebirthLost = "Reset: Mastery, XP, stats, Skill Points, talents, abilities, arenas, and equipment bound to this hero.",
-	RebirthKept = "Kept: Coins, pets, materials, potions, collectibles, unlocked heroes, other heroes, and unbound items.",
-	ArenaIntro = "Access belongs to the active hero. You need the Mastery requirement and the coin cost. World 2 has no working portal.",
-	EggIntro = "The Coin Egg opens Arena 1. The Advanced Coin Egg opens your highest unlocked arena from 2 to 15. The Premium Egg is display only.",
+	RebirthKept = "Kept: Coins, pets, materials, potions, collectibles, and unbound items.",
+	ArenaIntro = "Grave Wilds is the playable arena. Arenas 2–15 keep saved progress and are not open in this build. World 2 has no working portal.",
+	ArenaLater = "Not available in World 0. Saved progress is kept.",
+	EggIntro = "Three World 0 eggs. Coin and Advanced use provisional coin prices. Premium Egg is not for sale.",
+	TradingSoon = "Trading will be available soon.",
+	MerchantHint = "The chief is here. Trading will be available soon.",
 	MerchantTitle = "Tribal Merchant",
 	MerchantSell = "Sell Loot",
-	MerchantHint = "Fragments and relics can be sold here. Gear, potions, and pets stay with you. Prices are provisional.",
-	MerchantEmpty = "No loot to sell yet. Clear arenas to collect fragments and relics.",
+	MerchantEmpty = "Nothing is for sale.",
 	MerchantStay = "Stay near the chief.",
 	SellOne = "Sell 1",
 	SellAll = "Sell all",

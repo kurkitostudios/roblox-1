@@ -8,7 +8,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local sharedFolder = ReplicatedStorage:WaitForChild("Shared", 20)
 if not sharedFolder then
-	warn("[Kurkito] Manca ReplicatedStorage.Shared. Collega Script Sync a shared/Shared.")
+	warn("[Kurkito] ReplicatedStorage.Shared is missing. Connect Script Sync to shared/Shared.")
 	return
 end
 
@@ -16,7 +16,7 @@ local RemoteNames = require(sharedFolder:WaitForChild("RemoteNames"))
 local Strings = require(sharedFolder:WaitForChild("Strings"))
 local remotes = ReplicatedStorage:WaitForChild(RemoteNames.Folder, 20)
 if not remotes then
-	warn("[Kurkito] Remote non creati. Avvia il server con Main in ServerScriptService.GameServer.")
+	warn("[Kurkito] Remotes were not created. Start the server with Main in ServerScriptService.GameServer.")
 	return
 end
 
@@ -125,4 +125,4 @@ end)
 WorldText.Start()
 Motion.Start()
 refresh()
-print("[Kurkito] Client Build 003 ready.")
+print("[Kurkito] Client Build 003.1 ready.")

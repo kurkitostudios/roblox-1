@@ -51,15 +51,17 @@ function CombatFx.MarkSwing(player, kind)
 	character:SetAttribute("KurkitoSwingKind", kind or "Attack")
 end
 
-function CombatFx.BasicHit(player, heroId, fromPos, targetPos, color)
-	CombatFx.MarkSwing(player, "Attack")
+function CombatFx.BasicHit(player, heroId, fromPos, targetPos, color, kind)
+	CombatFx.MarkSwing(player, kind or "attack1")
 	if not allow() or not targetPos then
 		return
 	end
 	local tint = color or Color3.fromRGB(255, 220, 160)
+	heroId = "Warrior"
 	if heroId == "Warrior" then
 		local impact = targetPos + Vector3.new(0, 1.6, 0)
-		local arc = ghost(Vector3.new(0.45, 3.6, 3.6), Color3.fromRGB(214, 176, 120), CFrame.new(impact) * CFrame.Angles(0, 0, math.rad(68)), Enum.PartType.Cylinder)
+		local heavy = kind == "smash"
+		local arc = ghost(Vector3.new(heavy and 0.6 or 0.35, heavy and 4.8 or 3.2, heavy and 4.8 or 3.2), Color3.fromRGB(214, 176, 120), CFrame.new(impact) * CFrame.Angles(0, 0, math.rad(heavy and 80 or 68)), Enum.PartType.Cylinder)
 		arc.Transparency = 0.28
 		TweenService:Create(arc, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Transparency = 1,
@@ -138,6 +140,18 @@ function CombatFx.Strike(move, fromPos, targetPos, color)
 		TweenService:Create(swipe, TweenInfo.new(0.16), { Transparency = 1 }):Play()
 		Debris:AddItem(swipe, 0.2)
 	end
+end
+
+function CombatFx.Telegraph(position, color, radius, life)
+	if not position then
+		return nil
+	end
+	local ring = ghost(Vector3.new(0.18, math.max(2, radius * 2), math.max(2, radius * 2)), color or Color3.fromRGB(255, 90, 40), CFrame.new(position + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Enum.PartType.Cylinder)
+	ring.Material = Enum.Material.Neon
+	ring.Transparency = 0.72
+	TweenService:Create(ring, TweenInfo.new(life or 0.4), { Transparency = 0.35 }):Play()
+	Debris:AddItem(ring, (life or 0.4) + 0.05)
+	return ring
 end
 
 function CombatFx.Ring(position, color, radius, life)

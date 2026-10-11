@@ -3,8 +3,8 @@
 
 local GameConfig = {
 	BuildName = "Kurkito Battle Survival",
-	BuildVersion = "003",
-	WorldBuildId = "world0-build003",
+	BuildVersion = "003.1",
+	WorldBuildId = "world0-build003-1",
 
 	-- Loop AI e combattimento. Non usare un controllo per frame.
 	TickInterval = 0.2,

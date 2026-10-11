@@ -37,12 +37,15 @@ local function valueOf(player, boardId)
 		return nil
 	end
 	if boardId == "Rebirth" then
-		return Rules.TotalRebirths(data)
+		-- Solo i Rebirth del Warrior. Il prossimo Push sovrascrive la somma storica delle tre classi.
+		return Rules.WarriorRebirths(data)
 	elseif boardId == "Time" then
 		local runtime = RuntimeState.Get(player)
 		return data.playTimeSeconds + math.floor(runtime.playtimeBuffer)
 	elseif boardId == "Coins" then
-		return data.coins
+		-- Monete guadagnate in vita. Il saldo corrente e i rimborsi non contano.
+		-- I profili vecchi partono da 0: non si inventa lo storico.
+		return data.lifetimeCoinsEarned or 0
 	end
 	return data.totalKills
 end
@@ -66,7 +69,7 @@ function LeaderboardService.Start(_ctx)
 	end)
 	ready = ok
 	if not ok then
-		warn("[Kurkito][Leaderboard] DataStore non disponibile: " .. tostring(err))
+		warn("[Kurkito][Leaderboard] DataStore unavailable: " .. tostring(err))
 	else
 		print("[Kurkito][Leaderboard] Store attivi.")
 	end
@@ -97,12 +100,12 @@ function LeaderboardService.PushPlayer(player)
 			end
 		end
 	end
-	if data.selectedHero ~= "" then
-		local hero = data.heroes[data.selectedHero]
+	local hero = data.heroes and data.heroes.Warrior
+	if type(hero) == "table" then
 		pcall(function()
 			publicStore:SetAsync(tostring(player.UserId), {
 				displayName = player.DisplayName,
-				heroId = data.selectedHero,
+				heroId = "Warrior",
 				stats = Rules.DeepCopy(hero.stats),
 			})
 		end)

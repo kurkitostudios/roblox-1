@@ -67,9 +67,11 @@ end
 
 function InventoryService.Equip(player, uid)
 	local data = PlayerData.Get(player)
-	if not data or data.selectedHero == "" then
+	local hero = data and data.heroes and data.heroes.Warrior
+	if not data or type(hero) ~= "table" then
 		return { ok = false, error = "No active hero." }
 	end
+	data.selectedHero = "Warrior"
 	if type(uid) ~= "string" then
 		return { ok = false, error = "Invalid item." }
 	end
@@ -81,10 +83,10 @@ function InventoryService.Equip(player, uid)
 	if not def or not slots[def.slot] then
 		return { ok = false, error = "That item cannot be equipped." }
 	end
-	if def.classId and def.classId ~= data.selectedHero then
+	if def.classId and def.classId ~= "Warrior" then
 		return { ok = false, error = "That item belongs to another class." }
 	end
-	if entry.boundHero and entry.boundHero ~= data.selectedHero then
+	if entry.boundHero and entry.boundHero ~= "Warrior" then
 		return { ok = false, error = "That item is bound to another hero." }
 	end
 	for _, hero in pairs(data.heroes) do
@@ -94,7 +96,7 @@ function InventoryService.Equip(player, uid)
 			end
 		end
 	end
-	data.heroes[data.selectedHero].equippedGear[def.slot] = uid
+	hero.equippedGear[def.slot] = uid
 	PlayerData.MarkDirty(player, true)
 	local heroService = require(script.Parent.HeroService)
 	heroService.Refresh(player, false)
@@ -104,13 +106,14 @@ end
 
 function InventoryService.Unequip(player, slot)
 	local data = PlayerData.Get(player)
-	if not data or data.selectedHero == "" then
+	local hero = data and data.heroes and data.heroes.Warrior
+	if not data or type(hero) ~= "table" then
 		return { ok = false, error = "No active hero." }
 	end
 	if not slots[slot] then
 		return { ok = false, error = "Invalid slot." }
 	end
-	data.heroes[data.selectedHero].equippedGear[slot] = ""
+	hero.equippedGear[slot] = ""
 	PlayerData.MarkDirty(player, true)
 	require(script.Parent.HeroService).Refresh(player, false)
 	return { ok = true }

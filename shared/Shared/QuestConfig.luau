@@ -5,20 +5,20 @@ local QuestConfig = {
 	{
 		id = "prova_del_ferro",
 		name = "First Hunt",
-		description = "Defeat 10 enemies. Unlocks the next hero.",
+		description = "Defeat 10 enemies in the Grave Wilds.",
 		metric = "kills",
 		goal = 10,
 		coins = 150,
-		unlockNextHero = true,
+		unlockNextHero = false,
 	},
 	{
 		id = "cacciatore",
 		name = "Hunter",
-		description = "Defeat 30 enemies. Unlocks the next hero that is still locked.",
+		description = "Defeat 30 enemies.",
 		metric = "kills",
 		goal = 30,
 		coins = 400,
-		unlockNextHero = true,
+		unlockNextHero = false,
 	},
 }
 
