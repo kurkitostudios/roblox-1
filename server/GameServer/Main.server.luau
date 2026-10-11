@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 if _G.__KURKITO_SERVER_STARTED then
 	warn("[Kurkito] Bootstrap already running. Second start ignored.")
@@ -46,6 +47,8 @@ local LeaderboardService = load("LeaderboardService")
 local PromptRouter = load("PromptRouter")
 local StudioCommands = load("StudioCommands")
 local GameLoop = load("GameLoop")
+local WarriorPreview = load("WarriorPreview")
+WarriorPreview.DestroyIfPublished()
 
 ctx.services.RemotesService = RemotesService
 ctx.services.Notifier = Notifier

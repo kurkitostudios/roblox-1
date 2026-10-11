@@ -121,3 +121,29 @@ Un profilo nuovo in Studio parte con 500 monete di test. In produzione parte da 
 5. `DataStore` / `StudioAccessToApisNotAllowed` senza API Services è previsto: la sessione di Studio continua in memoria.
 6. All'avvio corretto compaiono `[Kurkito] Build 003.1 started. World 0 Warrior, lobby, Arena 1, automatic combat.` e `[Kurkito] World 0 built (world0-build003-1).` Il client stampa `[Kurkito] Client Build 003.1 ready.`
 7. `TestSync` stampa ancora `Cursor Cloud e Roblox Studio collegati!`. Quella riga non indica che il gioco sia pronto: indica solo che il vecchio collegamento server funziona.
+
+## 8. Anteprima del Warrior, senza avviare la partita
+
+Il costume del giocatore e l'anteprima usano lo stesso modulo: `WarriorVisualBuilder`. L'anteprima non viene creata all'avvio e, se resta salvata nel place, un server pubblicato la distrugge.
+
+In Studio, **senza premere Play**, incolla nella barra dei comandi:
+
+```lua
+local Preview = require(game.ServerScriptService.GameServer.Services.WarriorPreview)
+Preview.Build()
+```
+
+Poi, sempre nella barra dei comandi, una vista alla volta:
+
+```lua
+local Preview = require(game.ServerScriptService.GameServer.Services.WarriorPreview)
+Preview.AimCamera("front")
+```
+
+Viste: `front`, `back`, `left`, `right`, `threequarter`, `face`, `chest`, `belt`, `boots`, `club`.
+
+Il modello è `Workspace.KurkitoWarriorPreview.Warrior`, su un fondo grigio, lontano dal lobby (circa `0, 18, -640`). Il volto guarda verso -Z. La clava è nella mano destra. Il cranio è sulla spalla sinistra. Seleziona `Warrior` e premi F per inquadrarlo.
+
+Per rifarlo da capo: `Preview.Build()`. Per toglierlo: `Preview.Clear()`. Fallo prima di salvare il place se non vuoi il manichino nel file.
+
+Durante Play, solo in Studio, gli stessi comandi in chat sono `/warriorpreview` e `/warriorpreview clear`. `/warriorquality low` alleggerisce i dettagli secondari e tiene cranio, capelli, collana, pelliccia, stivali e clava. `/warriorquality full` è il costume completo.

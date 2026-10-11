@@ -27,9 +27,13 @@ Nessun playtest in Roblox Studio è stato eseguito. “Staticamente validato” 
 - Le arene 2–15 restano in config e nei salvataggi. Non vengono costruite né popolate. Sblocco e teletrasporto verso di loro rispondono che non sono disponibili, senza cancellare `unlockedArenas`. Il portale del Mondo 2 resta spento.
 - Testi giocatore in inglese. I cartelli 3D usano `WorldTextConfig` e si aggiornano circa ogni 0,3 secondi.
 
+## Build 003.2 — solo il costume del Warrior
+
+Il mondo, i DataStore, il combattimento e le animazioni restano quelli della 003.1. `WorldBuildId` non cambia. `WarriorVisualBuilder` sostituisce i vecchi blocchi sull'avatar: testa, capelli, volto, pelliccia, cranio sulla spalla sinistra, collana, tracolla, cintura, gonna, polsi, stivali e clava di pietra. Lo stesso `Apply` veste il giocatore e l'anteprima `Workspace.KurkitoWarriorPreview`. L'aspetto Roblox del giocatore non viene più caricato sopra il costume. Nessuna di queste mesh è stata renderizzata in questo ambiente: la verifica visiva si fa in Studio con la procedura in [SETUP_ROBLOX_STUDIO.md](SETUP_ROBLOX_STUDIO.md).
+
 ## Parziale
 
-- **Aspetto.** Geometria procedurale ispirata ai fogli approvati. Non è una mesh esterna e non è stata vista in Studio.
+- **Aspetto.** Il costume 003.2 è geometria nativa, non una mesh esterna. Non è stato visto in Studio. I tier di HP, DMG e Speed aggiungono ancora un osso, massa della pietra o una scia, senza cambiare le statistiche.
 - **Animazioni.** Pose locali sul rig. Non sono clip importate. Il peso del movimento e l'assenza di glitch di rotazione vanno visti in Play.
 - **Mercante.** La logica di catalogo resta dietro `TradingEnabled`. Spento, il pannello non ha pulsanti di vendita.
 - **Podi.** L'avatar reale dipende da `GetHumanoidDescriptionFromUserId`. Altrimenti resta il manichino.

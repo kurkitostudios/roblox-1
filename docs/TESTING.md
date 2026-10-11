@@ -18,6 +18,14 @@ Questa macchina non ha Roblox Studio. I controlli sotto sono statici o eseguono 
    - La fusione è 5:1 fino a Void.
 3. **Struttura Script Sync.** `python3 tests/check_structure.py` deve stampare `STRUCTURE_OK`.
 4. **Build 003.1.** `python3 tests/check_build003.py` deve stampare `BUILD003_OK`.
+5. **Costume del Warrior, Build 003.2.** `python3 tests/check_warrior_visual.py` deve stampare `WARRIOR_VISUAL_OK`.
+   - Il giocatore passa da `HeroAppearance` a `WarriorVisualBuilder`.
+   - La clava si chiama `Club` e il giunto resta `WeaponMotor` con `Animate`.
+   - Cranio a sinistra, punte a destra, capelli, volto, collana, pelliccia, cintura, gonna, polsi, stivali, pietra e fasce rosse sono nel builder.
+   - `LoadCharacterAppearance` è spento e lo spawn aspetta `CharacterAppearanceLoaded`.
+   - L'anteprima chiama lo stesso `Apply`, non parte da sola, e un server pubblicato la distrugge.
+   - `BuildVersion` resta `003.1` e `WorldBuildId` resta `world0-build003-1`.
+   - `Motion` non importa il builder. Nessun `rbxassetid` nel costume.
    - `BuildVersion` è `003.1` e `WorldBuildId` è `world0-build003-1`. Lo schema resta 1.
    - I DataStore del profilo e delle classifiche non cambiano nome.
    - `SwitchHero` è rifiutato. Il profilo nuovo nasce Warrior. Il sanitizer chiama `ReconcileWorld0`.
