@@ -12,6 +12,7 @@ local PlayerData = require(script.Parent.PlayerDataService)
 local Notifier = require(script.Parent.Notifier)
 local PetService = require(script.Parent.PetService)
 local HeroService = require(script.Parent.HeroService)
+local WarriorPreview = require(script.Parent.WarriorPreview)
 
 local StudioCommands = {}
 
@@ -100,6 +101,34 @@ function StudioCommands.Start()
 				else
 					reply(player, reason or "Potion was not added.")
 				end
+			elseif command == "warriorpreview" then
+				local action = string.lower(arg)
+				if action == "clear" then
+					WarriorPreview.Clear()
+					reply(player, "Warrior preview removed.")
+				else
+					local folder = WarriorPreview.Build()
+					if not folder then
+						reply(player, "Warrior preview is Studio-only.")
+						return
+					end
+					local count = folder:GetAttribute("PartCount") or 0
+					reply(player, "Warrior preview ready at Workspace.KurkitoWarriorPreview. Parts: " .. tostring(count) .. ". Select Warrior and press F.")
+				end
+			elseif command == "warriorquality" then
+				local character = player.Character
+				if not character then
+					return
+				end
+				local mode = string.lower(arg)
+				if mode ~= "low" and mode ~= "full" then
+					reply(player, "Usage: /warriorquality full  or  /warriorquality low")
+					return
+				end
+				player:SetAttribute("KurkitoVisualQuality", mode)
+				character:SetAttribute("KurkitoVisualQuality", mode)
+				HeroService.Refresh(player, false)
+				reply(player, "Warrior visual quality: " .. mode)
 			elseif command == "kills" then
 				local amount = math.floor(tonumber(arg) or 1)
 				if amount > 0 and amount <= 100 then
@@ -119,7 +148,7 @@ function StudioCommands.Start()
 	for _, player in ipairs(Players:GetPlayers()) do
 		hook(player)
 	end
-	print("[Kurkito] Comandi Studio: /coins /mastery /xp /pet /potion /kills")
+	print("[Kurkito] Comandi Studio: /coins /mastery /xp /pet /potion /kills /warriorpreview /warriorquality")
 end
 
 return StudioCommands

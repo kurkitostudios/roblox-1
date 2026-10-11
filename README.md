@@ -20,6 +20,6 @@ Il codice è Luau e si sincronizza con **Roblox Studio Script Sync**. Non usare 
 - [Test](docs/TESTING.md)
 - [Stato della Build 003.1](docs/IMPLEMENTATION_STATUS.md)
 
-I numeri di danno, costi, XP e drop sono **provvisori** e stanno nei moduli di `shared/Shared/`. Le geometrie della mappa e dei personaggi sono generate a runtime in Luau da `WorldBuilder`, `PropKit`, `TribalKit`, `CreatureKit` e `HeroAppearance`. Non sono mesh importate.
+I numeri di danno, costi, XP e drop sono **provvisori** e stanno nei moduli di `shared/Shared/`. Le geometrie della mappa e dei personaggi sono generate a runtime in Luau da `WorldBuilder`, `PropKit`, `TribalKit`, `CreatureKit` e `HeroAppearance`. Il Warrior giocabile è costruito da `WarriorVisualBuilder`. Non sono mesh importate.
 
 Le uova Robux sono solo vetrine: nessun Product ID e nessun acquisto reale.
